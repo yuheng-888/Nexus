@@ -229,6 +229,8 @@ Available interactive tools are:
 - `workspace.list_directory`
 - `workspace.read_file`
 - `workspace.search`
+- `workspace.replace_preview`
+- `workspace.replace_all` (approval required)
 - `workspace.write_file` (approval required)
 - `git.status`
 - `git.diff`
@@ -240,6 +242,8 @@ Available interactive tools are:
 - `rag.retrieve_context`
 - `reverse.detect_target`
 - `reverse.scan_javascript`
+- `tests.discover`
+- `tests.run` (approval required)
 
 Start the main assistant:
 

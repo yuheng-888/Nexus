@@ -12,6 +12,7 @@ import { LanguageService } from "./languageService.js";
 import { MarketplaceService } from "./marketplaceService.js";
 import { NativeAgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { NativeAgentMcpToolProvider } from "./agentMcpTools.js";
+import { NativeAgentTestToolProvider } from "./agentTestTools.js";
 import { McpService } from "./mcpService.js";
 import { resolveWorkspacePath } from "./pathGuards.js";
 import { RagService } from "./ragService.js";
@@ -90,6 +91,7 @@ export class NexusBackend {
       reverse: this.reverse,
       search: this.search,
       sessions,
+      tests: new NativeAgentTestToolProvider({ service: this.tests }),
       toolRunner: options.toolRunner
     });
     this.subagents = new SubagentService(this.agentRuntime);
