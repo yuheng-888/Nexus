@@ -190,14 +190,22 @@ emitting `nexus.tool_call` JSON objects. Nexus executes those calls, streams
 assistant response. If a model keeps requesting tools after the runtime limit,
 the session fails with an explicit tool-loop error instead of silently falling
 back.
+Tools marked as `write` require explicit renderer approval. Nexus emits
+`agent.tool.approval_requested` with a preview, waits for
+`window.nexus.session.write()` to send an `agent.tool.approval` decision, then
+emits `agent.tool.approval_resolved` before executing or denying the tool.
 
 Available interactive tools are:
 
 - `workspace.list_directory`
 - `workspace.read_file`
 - `workspace.search`
+- `workspace.write_file` (approval required)
 - `git.status`
 - `git.diff`
+- `git.stage` (approval required)
+- `git.unstage` (approval required)
+- `git.commit` (approval required)
 - `rag.retrieve_context`
 - `reverse.detect_target`
 - `reverse.scan_javascript`

@@ -1,5 +1,6 @@
 import type { ApiConfig } from "../contracts.js";
 import type { AgentModelClient, AgentModelMessage, AgentModelResponse } from "./agentModelClient.js";
+import type { AgentToolApprovalProvider } from "./agentToolApproval.js";
 import type { AgentInteractiveToolContext, AgentInteractiveToolRunner } from "./agentInteractiveTools.js";
 import { parseAgentToolCalls, type AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult } from "./agentTools.js";
@@ -7,6 +8,7 @@ import type { AgentToolResult } from "./agentTools.js";
 export const MAX_TOOL_ROUNDS = 8;
 
 export interface AgentToolLoopInput {
+  readonly approval: AgentToolApprovalProvider;
   readonly config: ApiConfig;
   readonly context: AgentInteractiveToolContext;
   readonly emit: (type: string, payload: object) => void;
@@ -51,12 +53,41 @@ async function runToolCalls(
       id: call.id,
       name: call.name
     });
-    const result = await input.toolRunner.runToolCall(call, input.context);
+    const result = await runApprovedToolCall(input, call);
     input.emit("agent.tool.completed", { ...result, id: call.id });
     messages.push({ content: formatToolResult(call.id, result), role: "user" });
   }
 
   return messages;
+}
+
+async function runApprovedToolCall(input: AgentToolLoopInput, call: AgentToolCall): Promise<AgentToolResult> {
+  const tool = input.toolRunner.getToolDefinition(call.name);
+  if (tool?.permission !== "write") {
+    return input.toolRunner.runToolCall(call, input.context);
+  }
+
+  const preview = await input.toolRunner.previewToolCall(call, input.context);
+  const decisionPromise = input.approval.requestApproval({ call, preview, tool });
+  input.emit("agent.tool.approval_requested", {
+    arguments: call.arguments,
+    id: call.id,
+    name: call.name,
+    preview
+  });
+  const decision = await decisionPromise;
+  input.emit("agent.tool.approval_resolved", {
+    approved: decision.approved,
+    id: call.id,
+    name: call.name,
+    reason: decision.reason ?? null
+  });
+
+  if (!decision.approved) {
+    return { name: call.name, ok: false, output: `Tool denied by user: ${decision.reason ?? "No reason provided"}` };
+  }
+
+  return input.toolRunner.runToolCall(call, input.context);
 }
 
 function formatToolResult(id: string, result: AgentToolResult): string {

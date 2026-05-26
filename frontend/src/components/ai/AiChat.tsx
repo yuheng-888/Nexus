@@ -9,6 +9,8 @@ import { ModelControls, useActiveAiConfig } from "./ModelControls";
 import { aiSendBlockReason } from "./modelControlsModel";
 import { AgentProviderSelect } from "./AgentProviderSelect";
 import { VoiceAssistantControl } from "./VoiceAssistantControl";
+import { AgentToolApprovalPrompt, readToolApprovalRequests, type PendingAgentToolApproval } from "./AgentToolApprovalPrompt";
+import { modelNoticeStyle } from "./AiChatStyles";
 
 const DEFAULT_CONVERSATION_ID = "main";
 
@@ -23,6 +25,7 @@ export function AiChat() {
   const [attachments, setAttachments] = useState<AgentMessageAttachment[]>([]);
   const [provider, setProvider] = useState<AiAgentProvider>("subagent");
   const [compressionCount, setCompressionCount] = useState(0);
+  const [pendingApproval, setPendingApproval] = useState<PendingAgentToolApproval | null>(null);
   const activeConfig = useActiveAiConfig();
   const messagesRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,6 +94,9 @@ export function AiChat() {
       const offData = window.nexus.session.onData((event) => {
         if (event.sessionId === session.id) {
           streamBufferRef.current += event.data;
+          for (const approval of readToolApprovalRequests(event.data)) {
+            setPendingApproval({ ...approval, sessionId: session.id });
+          }
           const output = getStreamingAgentOutput(streamBufferRef.current, provider);
           if (!output.shouldRender) return;
           const messages = useStore.getState().aiMessages;
@@ -120,6 +126,7 @@ export function AiChat() {
           }
           offData(); offExit();
           setAiSession(null);
+          setPendingApproval(null);
           if (event.exitCode === 0) {
             void loadConversation();
           }
@@ -138,8 +145,20 @@ export function AiChat() {
     clearAiMessages();
     setCompressionCount(0);
     setAiSession(null);
+    setPendingApproval(null);
     setIsStreaming(false);
   }, [aiSession, clearAiMessages, setAiSession]);
+
+  const resolveToolApproval = useCallback((approved: boolean) => {
+    if (pendingApproval === null) return;
+    void window.nexus.session.write(pendingApproval.sessionId, `${JSON.stringify({
+      approved,
+      id: pendingApproval.id,
+      reason: approved ? undefined : "User denied",
+      type: "agent.tool.approval"
+    })}\n`);
+    setPendingApproval(null);
+  }, [pendingApproval]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -164,7 +183,6 @@ export function AiChat() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-panel)" }}>
-      {/* Header */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "6px 12px", borderBottom: "1px solid var(--border-subtle)",
@@ -208,8 +226,10 @@ export function AiChat() {
       </div>
 
       <AiMessageList agentName={agentName} isStreaming={isStreaming} messages={aiMessages} messagesRef={messagesRef} />
+      {pendingApproval !== null && (
+        <AgentToolApprovalPrompt approval={pendingApproval} onResolve={resolveToolApproval} />
+      )}
 
-      {/* Input */}
       <div style={{
         display: "flex", flexDirection: "column", gap: 8,
         padding: "10px 12px",
@@ -277,11 +297,3 @@ export function AiChat() {
     </div>
   );
 }
-
-const modelNoticeStyle: React.CSSProperties = {
-  border: "1px solid var(--border-subtle)",
-  borderRadius: "var(--radius-sm)",
-  color: "var(--text-muted)",
-  fontSize: 11,
-  padding: "6px 8px"
-};

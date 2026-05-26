@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
@@ -120,6 +120,59 @@ describe("AgentRuntimeService native tool loop", () => {
       type: "agent.tool.completed"
     }));
   });
+
+  it("requires approval before running write native tools", async () => {
+    const workspaceRoot = await createWorkspace();
+    await mkdir(join(workspaceRoot, "src"), { recursive: true });
+    await writeFile(join(workspaceRoot, "src/note.txt"), "before\n");
+    const events: string[] = [];
+    const exits: number[] = [];
+    const modelClient = new FakeModelClient([
+      {
+        text: JSON.stringify({
+          arguments: { content: "after\n", path: "src/note.txt" },
+          id: "write-note",
+          name: "workspace.write_file",
+          type: "nexus.tool_call"
+        })
+      },
+      { text: "Updated src/note.txt." }
+    ]);
+    const manager = new SessionManager({
+      onData: (sessionId, data) => {
+        events.push(data);
+        approveRequestedTool(manager, sessionId, data);
+      },
+      onExit: (_sessionId, exit) => exits.push(exit.exitCode),
+      ptyFactory: new ThrowingPtyFactory()
+    });
+    const runtime = createRuntimeWithSessions(workspaceRoot, modelClient, manager);
+
+    runtime.start({
+      kind: "agent",
+      prompt: "Update src/note.txt",
+      workspaceRoot
+    });
+
+    await waitForExit(exits);
+    const secondRequest = modelClient.requests[1]?.messages.map((message) => message.content).join("\n");
+    const parsedEvents = parseEvents(events);
+
+    expect(await readFile(join(workspaceRoot, "src/note.txt"), "utf8")).toBe("after\n");
+    expect(secondRequest).toContain("workspace.write_file");
+    expect(secondRequest).toContain("Wrote src/note.txt");
+    expect(parsedEvents).toContainEqual(expect.objectContaining({
+      id: "write-note",
+      name: "workspace.write_file",
+      preview: expect.stringContaining("src/note.txt"),
+      type: "agent.tool.approval_requested"
+    }));
+    expect(parsedEvents).toContainEqual(expect.objectContaining({
+      approved: true,
+      id: "write-note",
+      type: "agent.tool.approval_resolved"
+    }));
+  });
 });
 
 function createRuntime(
@@ -128,17 +181,26 @@ function createRuntime(
   events: string[],
   exits: number[]
 ): AgentRuntimeService {
+  const sessions = new SessionManager({
+    onData: (_sessionId, data) => events.push(data),
+    onExit: (_sessionId, exit) => exits.push(exit.exitCode),
+    ptyFactory: new ThrowingPtyFactory()
+  });
+  return createRuntimeWithSessions(workspaceRoot, modelClient, sessions);
+}
+
+function createRuntimeWithSessions(
+  workspaceRoot: string,
+  modelClient: AgentModelClient,
+  sessions: SessionManager
+): AgentRuntimeService {
   return new AgentRuntimeService({
     apiConfig: configuredApi(workspaceRoot),
     files: new FileService({ workspaceRoot }),
     git: new GitService({ workspaceRoot }),
     modelClient,
     search: new SearchService({ workspaceRoot }),
-    sessions: new SessionManager({
-      onData: (_sessionId, data) => events.push(data),
-      onExit: (_sessionId, exit) => exits.push(exit.exitCode),
-      ptyFactory: new ThrowingPtyFactory()
-    }),
+    sessions,
     toolRunner: fakeStartupToolRunner()
   });
 }
@@ -174,4 +236,15 @@ function parseEvents(chunks: readonly string[]): readonly Record<string, unknown
   return chunks.flatMap((chunk) => {
     return chunk.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as Record<string, unknown>);
   });
+}
+
+function approveRequestedTool(manager: SessionManager, sessionId: string, data: string): void {
+  for (const event of parseEvents([data])) {
+    if (event.type !== "agent.tool.approval_requested" || typeof event.id !== "string") continue;
+    manager.write(sessionId, `${JSON.stringify({
+      approved: true,
+      id: event.id,
+      type: "agent.tool.approval"
+    })}\n`);
+  }
 }

@@ -64,4 +64,43 @@ describe("SessionManager", () => {
 
     expect(() => manager.write("missing", "pwd\n")).toThrow(/Unknown session/);
   });
+
+  it("delivers writes to native runtime sessions through the input channel", async () => {
+    const inputs: string[] = [];
+    const exits: number[] = [];
+    const manager = new SessionManager({
+      onData: () => {},
+      onExit: (_sessionId, exit) => exits.push(exit.exitCode),
+      ptyFactory: { spawn: () => new FakePty() }
+    });
+
+    const session = manager.createRuntime({
+      args: [],
+      command: "nexus-agent-runtime",
+      cwd: "/workspace",
+      kind: "agent"
+    }, async (controller) => {
+      await new Promise<void>((resolve) => {
+        controller.onInput((data) => {
+          inputs.push(data);
+          resolve();
+        });
+      });
+    });
+
+    manager.write(session.id, "{\"approved\":true}\n");
+
+    await waitForExit(exits);
+    expect(inputs).toEqual(["{\"approved\":true}\n"]);
+    expect(exits).toEqual([0]);
+  });
 });
+
+async function waitForExit(exits: readonly number[]): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (exits.length > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+
+  throw new Error("runtime session did not exit");
+}

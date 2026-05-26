@@ -2,6 +2,8 @@ import type { DirectoryEntry, SearchMatch } from "../contracts.js";
 import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
 import type { AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
+import { readLimit, readOptionalBoolean, readOptionalString, readRequiredString } from "./agentToolArgs.js";
+import { createWritableToolSpecs } from "./agentWritableTools.js";
 import type { FileService } from "./fileService.js";
 import type { GitService } from "./gitService.js";
 import { resolveWorkspacePath } from "./pathGuards.js";
@@ -25,10 +27,13 @@ export interface AgentInteractiveToolDefinition {
   readonly description: string;
   readonly name: string;
   readonly parameters: string;
+  readonly permission: AgentInteractiveToolPermission;
 }
 
 export interface AgentInteractiveToolRunner {
+  getToolDefinition(name: string): AgentInteractiveToolDefinition | undefined;
   listTools(): readonly AgentInteractiveToolDefinition[];
+  previewToolCall(call: AgentToolCall, context: AgentInteractiveToolContext): Promise<string>;
   runToolCall(call: AgentToolCall, context: AgentInteractiveToolContext): Promise<AgentToolResult>;
 }
 
@@ -37,7 +42,10 @@ export interface NativeAgentInteractiveToolRunnerOptions {
   readonly reverse?: ReverseContextProvider;
 }
 
-interface ToolSpec extends AgentInteractiveToolDefinition {
+export type AgentInteractiveToolPermission = "read" | "write";
+
+export interface AgentInteractiveToolSpec extends AgentInteractiveToolDefinition {
+  preview?: (args: Record<string, unknown>, context: AgentInteractiveToolContext) => Promise<string>;
   run(args: Record<string, unknown>, context: AgentInteractiveToolContext): Promise<string>;
 }
 
@@ -47,18 +55,29 @@ const MAX_RAG_LIMIT = 12;
 const MAX_SEARCH_LIMIT = 50;
 
 export class NativeAgentInteractiveToolRunner implements AgentInteractiveToolRunner {
-  private readonly tools: readonly ToolSpec[];
+  private readonly tools: readonly AgentInteractiveToolSpec[];
 
   constructor(options: NativeAgentInteractiveToolRunnerOptions = {}) {
     this.tools = buildTools(options);
   }
 
+  getToolDefinition(name: string): AgentInteractiveToolDefinition | undefined {
+    const tool = this.findTool(name);
+    return tool === undefined ? undefined : toDefinition(tool);
+  }
+
   listTools(): readonly AgentInteractiveToolDefinition[] {
-    return this.tools.map(({ description, name, parameters }) => ({ description, name, parameters }));
+    return this.tools.map(toDefinition);
+  }
+
+  async previewToolCall(call: AgentToolCall, context: AgentInteractiveToolContext): Promise<string> {
+    const tool = this.findTool(call.name);
+    if (tool?.preview === undefined) return `${call.name}\n${JSON.stringify(call.arguments, null, 2)}`;
+    return tool.preview(call.arguments, context);
   }
 
   async runToolCall(call: AgentToolCall, context: AgentInteractiveToolContext): Promise<AgentToolResult> {
-    const tool = this.tools.find((candidate) => candidate.name === call.name);
+    const tool = this.findTool(call.name);
     if (tool === undefined) return failed(call.name, `Unknown Nexus tool: ${call.name}`);
 
     try {
@@ -66,6 +85,10 @@ export class NativeAgentInteractiveToolRunner implements AgentInteractiveToolRun
     } catch (error) {
       return failed(call.name, error instanceof Error ? error.message : String(error));
     }
+  }
+
+  private findTool(name: string): AgentInteractiveToolSpec | undefined {
+    return this.tools.find((candidate) => candidate.name === name);
   }
 }
 
@@ -83,26 +106,27 @@ export function formatInteractiveToolInstructions(
   ].join("\n");
 }
 
-function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly ToolSpec[] {
+function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly AgentInteractiveToolSpec[] {
   return [
-    tool("workspace.list_directory", "List files in a workspace directory.", "path?: string", listDirectory),
-    tool("workspace.read_file", "Read a UTF-8 text file from the workspace.", "path: string", readFile),
-    tool("workspace.search", "Search workspace text with ripgrep.", "query: string, cwd?: string, limit?: number", searchWorkspace),
-    tool("git.status", "Read git status for the workspace.", "cwd?: string", readGitStatus),
-    tool("git.diff", "Read git diff without modifying files.", "cwd?: string, path?: string, staged?: boolean", readGitDiff),
-    tool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
-    tool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
-    tool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse))
+    readTool("workspace.list_directory", "List files in a workspace directory.", "path?: string", listDirectory),
+    readTool("workspace.read_file", "Read a UTF-8 text file from the workspace.", "path: string", readFile),
+    readTool("workspace.search", "Search workspace text with ripgrep.", "query: string, cwd?: string, limit?: number", searchWorkspace),
+    readTool("git.status", "Read git status for the workspace.", "cwd?: string", readGitStatus),
+    readTool("git.diff", "Read git diff without modifying files.", "cwd?: string, path?: string, staged?: boolean", readGitDiff),
+    readTool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
+    readTool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
+    readTool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse)),
+    ...createWritableToolSpecs()
   ];
 }
 
-function tool(
+function readTool(
   name: string,
   description: string,
   parameters: string,
-  run: ToolSpec["run"]
-): ToolSpec {
-  return { description, name, parameters, run };
+  run: AgentInteractiveToolSpec["run"]
+): AgentInteractiveToolSpec {
+  return { description, name, parameters, permission: "read", run };
 }
 
 async function listDirectory(args: Record<string, unknown>, context: AgentInteractiveToolContext): Promise<string> {
@@ -136,7 +160,7 @@ async function readGitDiff(args: Record<string, unknown>, context: AgentInteract
   return formatGitDiffResult(result);
 }
 
-function retrieveRagContext(provider: RagContextProvider | undefined): ToolSpec["run"] {
+function retrieveRagContext(provider: RagContextProvider | undefined): AgentInteractiveToolSpec["run"] {
   return async (args, context) => {
     if (provider === undefined) throw new Error("Local RAG is not configured.");
     const limit = readLimit(args, DEFAULT_RAG_LIMIT, MAX_RAG_LIMIT);
@@ -146,14 +170,14 @@ function retrieveRagContext(provider: RagContextProvider | undefined): ToolSpec[
   };
 }
 
-function detectReverseTarget(provider: ReverseContextProvider | undefined): ToolSpec["run"] {
+function detectReverseTarget(provider: ReverseContextProvider | undefined): AgentInteractiveToolSpec["run"] {
   return async (args, context) => {
     if (provider === undefined) throw new Error("Reverse tools are not configured.");
     return formatReverseTargetDetection(await provider.detectTarget(resolveToolPath(args, context)));
   };
 }
 
-function scanReverseJavaScript(provider: ReverseContextProvider | undefined): ToolSpec["run"] {
+function scanReverseJavaScript(provider: ReverseContextProvider | undefined): AgentInteractiveToolSpec["run"] {
   return async (args, context) => {
     if (provider === undefined) throw new Error("Reverse tools are not configured.");
     return formatReverseAnalysis(await provider.scanJavaScript({ path: resolveToolPath(args, context) }));
@@ -185,28 +209,6 @@ function formatGitDiffResult(result: GitDiffResult): string {
   return [`staged=${result.staged}`, result.path === undefined ? "" : `path=${result.path}`, formatGitCommandResult(result)].filter(Boolean).join("\n");
 }
 
-function readRequiredString(args: Record<string, unknown>, key: string): string {
-  const value = readOptionalString(args, key);
-  if (value === undefined) throw new Error(`Tool argument required: ${key}`);
-  return value;
-}
-
-function readOptionalString(args: Record<string, unknown>, key: string): string | undefined {
-  const value = args[key];
-  return typeof value === "string" && value.trim() !== "" ? value : undefined;
-}
-
-function readOptionalBoolean(args: Record<string, unknown>, key: string): boolean | undefined {
-  const value = args[key];
-  return typeof value === "boolean" ? value : undefined;
-}
-
-function readLimit(args: Record<string, unknown>, defaultLimit: number, maxLimit: number): number {
-  const value = args.limit;
-  if (typeof value !== "number" || !Number.isFinite(value)) return defaultLimit;
-  return Math.min(Math.max(Math.floor(value), 1), maxLimit);
-}
-
 function requireWorkspaceRoot(context: AgentInteractiveToolContext): string {
   if (context.workspaceRoot === null) throw new Error("No workspace is open");
   return context.workspaceRoot;
@@ -217,5 +219,14 @@ function failed(name: string, output: string): AgentToolResult {
 }
 
 function formatToolDefinition(toolDefinition: AgentInteractiveToolDefinition): string {
-  return `- ${toolDefinition.name}: ${toolDefinition.description} Arguments: ${toolDefinition.parameters}.`;
+  return `- ${toolDefinition.name} (${toolDefinition.permission}): ${toolDefinition.description} Arguments: ${toolDefinition.parameters}.`;
+}
+
+function toDefinition(tool: AgentInteractiveToolSpec): AgentInteractiveToolDefinition {
+  return {
+    description: tool.description,
+    name: tool.name,
+    parameters: tool.parameters,
+    permission: tool.permission
+  };
 }

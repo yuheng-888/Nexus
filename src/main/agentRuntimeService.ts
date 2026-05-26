@@ -8,6 +8,7 @@ import {
 } from "./agentInteractiveTools.js";
 import { NativeAgentToolRunner, type AgentToolResult, type AgentToolRunner, type RagContextProvider } from "./agentTools.js";
 import { buildAgentSystemPrompt } from "./agentSystemPrompt.js";
+import { createSessionToolApproval } from "./agentToolApproval.js";
 import { MAX_TOOL_ROUNDS, runAgentToolLoop } from "./agentToolLoop.js";
 import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
@@ -119,6 +120,7 @@ export class AgentRuntimeService {
       const tools = await this.runStartupTools(input, controller);
       const messages = await this.buildModelMessages(input, tools);
       const response = await runAgentToolLoop({
+        approval: createSessionToolApproval(controller),
         config: input.config,
         context: this.buildToolContext(input),
         emit: (type, payload) => emit(controller, type, payload),
