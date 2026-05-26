@@ -5,6 +5,9 @@ import type {
   GitBranchDeleteRequest,
   GitDiffRequest,
   GitFetchRequest,
+  GitHubPullRequestCreateRequest,
+  GitHubPullRequestListRequest,
+  GitHubPullRequestReviewListRequest,
   GitHubPublishRequest,
   GitInitRequest,
   GitLogRequest,
@@ -35,6 +38,15 @@ export function registerGitHandlers(backend: NexusBackend): void {
   ipcMain.handle("nexus:git:pull", (_event, request?: GitPullRequest) => backend.git.pull(request));
   ipcMain.handle("nexus:git:publishSafetyScan", () => backend.gitPublish.publishSafetyScan());
   ipcMain.handle("nexus:git:publishToGitHub", (_event, request: GitHubPublishRequest) => backend.gitPublish.publishToGitHub(request));
+  ipcMain.handle("nexus:git:createPullRequest", (_event, request: GitHubPullRequestCreateRequest) => {
+    return backend.gitHubPr.createPullRequest(request);
+  });
+  ipcMain.handle("nexus:git:listPullRequests", (_event, request: GitHubPullRequestListRequest) => {
+    return backend.gitHubPr.listPullRequests(request);
+  });
+  ipcMain.handle("nexus:git:listPullRequestReviews", (_event, request: GitHubPullRequestReviewListRequest) => {
+    return backend.gitHubPr.listPullRequestReviews(request);
+  });
   ipcMain.handle("nexus:git:push", (_event, request?: GitPushRequest) => backend.git.push(request));
   ipcMain.handle("nexus:git:createBranch", (_event, request: GitBranchCreateRequest) => backend.git.createBranch(request));
   ipcMain.handle("nexus:git:checkoutBranch", (_event, request: GitBranchCheckoutRequest) => backend.git.checkoutBranch(request));

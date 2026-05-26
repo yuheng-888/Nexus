@@ -198,6 +198,50 @@ export interface GitHubPublishResult {
   readonly safety: GitPublishSafetyReport;
 }
 
+export type GitHubPullRequestState = "all" | "closed" | "open";
+
+export interface GitHubRepositoryRequest {
+  readonly owner?: string;
+  readonly remoteName?: string;
+  readonly repo?: string;
+  readonly token: string;
+}
+
+export interface GitHubPullRequestCreateRequest extends GitHubRepositoryRequest {
+  readonly base?: string;
+  readonly body?: string;
+  readonly draft?: boolean;
+  readonly head?: string;
+  readonly title: string;
+}
+
+export interface GitHubPullRequestListRequest extends GitHubRepositoryRequest {
+  readonly state?: GitHubPullRequestState;
+}
+
+export interface GitHubPullRequestReviewListRequest extends GitHubRepositoryRequest {
+  readonly number: number;
+}
+
+export interface GitHubPullRequest {
+  readonly authorLogin: string;
+  readonly baseRef: string;
+  readonly headRef: string;
+  readonly htmlUrl: string;
+  readonly number: number;
+  readonly state: string;
+  readonly title: string;
+}
+
+export interface GitHubPullRequestReview {
+  readonly authorLogin: string;
+  readonly body: string;
+  readonly htmlUrl: string;
+  readonly id: number;
+  readonly state: string;
+  readonly submittedAt?: string;
+}
+
 export interface GitApi {
   abortMerge(): Promise<GitCommandResult>;
   abortRebase(): Promise<GitCommandResult>;
@@ -220,6 +264,9 @@ export interface GitApi {
   pull(request?: GitPullRequest): Promise<GitCommandResult>;
   publishSafetyScan(): Promise<GitPublishSafetyReport>;
   publishToGitHub(request: GitHubPublishRequest): Promise<GitHubPublishResult>;
+  createPullRequest(request: GitHubPullRequestCreateRequest): Promise<GitHubPullRequest>;
+  listPullRequestReviews(request: GitHubPullRequestReviewListRequest): Promise<readonly GitHubPullRequestReview[]>;
+  listPullRequests(request: GitHubPullRequestListRequest): Promise<readonly GitHubPullRequest[]>;
   push(request?: GitPushRequest): Promise<GitCommandResult>;
   rebase(branch: string): Promise<GitCommandResult>;
   removeRemote(name: string): Promise<GitCommandResult>;

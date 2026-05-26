@@ -105,6 +105,9 @@ git.fetch(request?) / git.pull(request?) / git.push(request?): Promise<GitComman
 git.init(request?): Promise<GitCommandResult>
 git.publishSafetyScan(): Promise<GitPublishSafetyReport>
 git.publishToGitHub(request): Promise<GitHubPublishResult>
+git.createPullRequest(request): Promise<GitHubPullRequest>
+git.listPullRequests(request): Promise<GitHubPullRequest[]>
+git.listPullRequestReviews(request): Promise<GitHubPullRequestReview[]>
 git.createBranch(request) / git.checkoutBranch(request) / git.deleteBranch(request): Promise<GitCommandResult>
 git.log(request?): Promise<GitLogResult>
 git.show(ref) / git.merge(branch) / git.rebase(branch): Promise<GitCommandResult>
@@ -139,6 +142,11 @@ initializes Git when needed, stages and commits changed files, creates a GitHub
 repository through the GitHub REST API, upserts the requested remote, and pushes
 the requested branch with upstream tracking. The GitHub token is supplied per
 request and is not persisted by Nexus.
+
+GitHub PR APIs infer `owner/repo` from the configured remote when those fields
+are omitted. `createPullRequest` defaults `base` to `main` and `head` to the
+current branch, then calls the GitHub REST API directly. `listPullRequests` and
+`listPullRequestReviews` expose review state for native UI and AI workflows.
 
 ## API Configuration
 

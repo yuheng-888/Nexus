@@ -6,6 +6,7 @@ import { ApiConfigService } from "./apiConfigService.js";
 import { ConversationService } from "./conversationService.js";
 import { FileService } from "./fileService.js";
 import { GitService } from "./gitService.js";
+import { GitHubPrService } from "./gitHubPrService.js";
 import { GitPublishService } from "./gitPublishService.js";
 import { LanguageService } from "./languageService.js";
 import { MarketplaceService } from "./marketplaceService.js";
@@ -40,6 +41,7 @@ export interface WorkspaceStateRecorder {
 export class NexusBackend {
   readonly files: FileService;
   readonly git: GitService;
+  readonly gitHubPr: GitHubPrService;
   readonly gitPublish: GitPublishService;
   readonly search: SearchService;
   readonly languages: LanguageService;
@@ -64,6 +66,7 @@ export class NexusBackend {
     this.search = new SearchService({ workspaceRoot: config.root });
     this.languages = new LanguageService({ workspaceRoot: config.root });
     this.git = new GitService({ workspaceRoot: config.root });
+    this.gitHubPr = new GitHubPrService({ git: this.git, workspaceRoot: config.root });
     this.gitPublish = new GitPublishService({ git: this.git, workspaceRoot: config.root });
     this.marketplace = new MarketplaceService();
     this.mcp = new McpService();
@@ -116,6 +119,7 @@ export class NexusBackend {
     this.search.setWorkspaceRoot(workspaceRoot);
     this.languages.setWorkspaceRoot(workspaceRoot);
     this.git.setWorkspaceRoot(workspaceRoot);
+    this.gitHubPr.setWorkspaceRoot(workspaceRoot);
     this.gitPublish.setWorkspaceRoot(workspaceRoot);
     this.rag.setWorkspaceRoot(workspaceRoot);
     this.workflows.setWorkspaceRoot(workspaceRoot);
