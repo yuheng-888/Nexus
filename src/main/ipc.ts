@@ -1,5 +1,13 @@
 import { dialog, ipcMain, type WebContents } from "electron";
-import type { AgentStartOptions, McpSearchRequest, McpServerAddRequest, SearchRequest, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
+import type {
+  AgentStartOptions,
+  McpSearchRequest,
+  McpServerAddRequest,
+  SearchReplaceRequest,
+  SearchRequest,
+  SubagentStartOptions,
+  TerminalCreateOptions
+} from "../contracts.js";
 import type { LanguageDocumentInput, LanguagePathRequest, LanguagePositionRequest } from "../languageContracts.js";
 import type { RagSearchRequest } from "../ragContracts.js";
 import type {
@@ -110,6 +118,12 @@ function registerLanguageHandlers(backend: NexusBackend): void {
 
 function registerSearchHandlers(backend: NexusBackend): void {
   ipcMain.handle("nexus:search", (_event, request: SearchRequest) => backend.search.search(request));
+  ipcMain.handle("nexus:search:replaceApply", (_event, request: SearchReplaceRequest) => {
+    return backend.search.applyReplace(request);
+  });
+  ipcMain.handle("nexus:search:replacePreview", (_event, request: SearchReplaceRequest) => {
+    return backend.search.previewReplace(request);
+  });
 }
 
 function registerSessionHandlers(backend: NexusBackend): void {

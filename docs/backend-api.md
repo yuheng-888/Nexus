@@ -58,10 +58,17 @@ hooks, injected backups, extracted folders, and packed ASAR files.
 
 ```ts
 window.nexus.search(request: SearchRequest): Promise<SearchMatch[]>
+window.nexus.searchReplace.preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>
+window.nexus.searchReplace.apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>
 ```
 
 Uses `rg --json` and returns compact match records with path, line, and preview.
 An empty query returns `[]`; a ripgrep execution failure throws the real error.
+
+Search replace uses literal matching. `preview` returns per-file match counts and
+line previews without writing files. `apply` recomputes matches against the
+current workspace files, writes the replacements, and returns changed-file and
+replacement counts.
 
 ## Local RAG / Code Index
 

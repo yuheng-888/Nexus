@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AgentStartOptions, Plugin, Skill, InstallResult, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest, PluginSearchRequest, SearchRequest, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
+import type { AgentStartOptions, Plugin, Skill, InstallResult, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest, PluginSearchRequest, SearchReplaceRequest, SearchRequest, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
 import type { DialogPathPickRequest, DialogPathPickResult } from "../dialogContracts.js";
 import type { NexusGitApi } from "../gitContracts.js";
 import type { LanguageCompletionList, LanguageDiagnostic, LanguageDocumentInput, LanguageDocumentSymbol, LanguageHover, LanguageLocation, LanguagePathRequest, LanguagePositionRequest } from "../languageContracts.js";
@@ -192,6 +192,10 @@ const nexusApi = {
     }
   },
   search: (request: SearchRequest) => ipcRenderer.invoke("nexus:search", request),
+  searchReplace: {
+    apply: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replaceApply", request),
+    preview: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replacePreview", request)
+  },
   shell: {
     revealPath: (path: string): Promise<ShellRevealResult> => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },

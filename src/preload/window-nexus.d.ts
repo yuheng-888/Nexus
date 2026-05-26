@@ -1,4 +1,4 @@
-import type { AgentStartOptions, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, Plugin, Skill, InstallResult, DirectoryEntry, FileReadResult, PluginSearchRequest, SearchMatch, SearchRequest, SessionSnapshot, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions, WorkspaceInfo } from "../contracts.js";
+import type { AgentStartOptions, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, Plugin, Skill, InstallResult, DirectoryEntry, FileReadResult, PluginSearchRequest, SearchMatch, SearchReplaceApplyResult, SearchReplacePreviewResult, SearchReplaceRequest, SearchRequest, SessionSnapshot, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions, WorkspaceInfo } from "../contracts.js";
 import type { NexusDialogApi } from "../dialogContracts.js";
 import type { NexusGitApi } from "../gitContracts.js";
 import type { NexusLanguageApi } from "../languageContracts.js";
@@ -67,6 +67,10 @@ interface NexusApi {
   };
   reverse: NexusReverseApi;
   search(request: SearchRequest): Promise<SearchMatch[]>;
+  searchReplace: {
+    apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>;
+    preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>;
+  };
   shell: NexusShellApi;
   session: {
     kill(sessionId: string): Promise<void>;

@@ -141,6 +141,10 @@ const nexusApi = {
     }
   },
   search: (request) => ipcRenderer.invoke("nexus:search", request),
+  searchReplace: {
+    apply: (request) => ipcRenderer.invoke("nexus:search:replaceApply", request),
+    preview: (request) => ipcRenderer.invoke("nexus:search:replacePreview", request)
+  },
   shell: {
     revealPath: (path) => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },

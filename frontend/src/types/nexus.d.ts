@@ -40,6 +40,36 @@ export interface SearchMatch {
   readonly preview: string;
 }
 
+export interface SearchReplaceRequest {
+  readonly cwd?: string;
+  readonly paths?: readonly string[];
+  readonly query: string;
+  readonly replacement: string;
+}
+
+export interface SearchReplaceLinePreview {
+  readonly after: string;
+  readonly before: string;
+  readonly line: number;
+}
+
+export interface SearchReplaceFilePreview {
+  readonly matches: number;
+  readonly path: string;
+  readonly previews: readonly SearchReplaceLinePreview[];
+}
+
+export interface SearchReplacePreviewResult {
+  readonly files: readonly SearchReplaceFilePreview[];
+  readonly totalMatches: number;
+}
+
+export interface SearchReplaceApplyResult {
+  readonly filesChanged: number;
+  readonly paths: readonly string[];
+  readonly totalMatches: number;
+}
+
 export interface SessionSnapshot {
   readonly args: readonly string[];
   readonly command: string;
@@ -209,6 +239,10 @@ interface NexusApi {
     toggle(name: string): Promise<InstallResult>;
   };
   search(request: SearchRequest): Promise<SearchMatch[]>;
+  searchReplace: {
+    apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>;
+    preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>;
+  };
   session: {
     kill(sessionId: string): Promise<void>;
     onData(handler: (event: { data: string; sessionId: string }) => void): () => void;
