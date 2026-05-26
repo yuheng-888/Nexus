@@ -1,5 +1,6 @@
 import type { DirectoryEntry, SearchMatch } from "../contracts.js";
 import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
+import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
 import type { AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
@@ -39,6 +40,7 @@ export interface AgentInteractiveToolRunner {
 }
 
 export interface NativeAgentInteractiveToolRunnerOptions {
+  readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly mcp?: AgentMcpToolProvider;
   readonly rag?: RagContextProvider;
   readonly reverse?: ReverseContextProvider;
@@ -118,6 +120,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     readTool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
     readTool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
     readTool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse)),
+    ...createGitHubPullRequestToolSpecs(options.gitHubPullRequests),
     ...createMcpToolSpecs(options.mcp),
     ...createWritableToolSpecs()
   ];
