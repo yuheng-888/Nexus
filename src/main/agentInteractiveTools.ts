@@ -3,6 +3,7 @@ import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
 import { createGitHubPublishToolSpecs, type AgentGitHubPublishToolProvider } from "./agentGitHubPublishTools.js";
 import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { createLanguageToolSpecs, type AgentLanguageToolProvider } from "./agentLanguageTools.js";
+import { createMarketplaceToolSpecs, type AgentMarketplaceToolProvider } from "./agentMarketplaceTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
 import { createScriptToolSpecs, type AgentScriptToolProvider } from "./agentScriptTools.js";
 import { createSearchReplaceToolSpecs } from "./agentSearchReplaceTools.js";
@@ -49,6 +50,7 @@ export interface NativeAgentInteractiveToolRunnerOptions {
   readonly gitHubPublish?: AgentGitHubPublishToolProvider;
   readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly languages?: AgentLanguageToolProvider;
+  readonly marketplace?: AgentMarketplaceToolProvider;
   readonly mcp?: AgentMcpToolProvider;
   readonly rag?: RagContextProvider;
   readonly reverse?: ReverseContextProvider;
@@ -138,6 +140,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     ...createWorkflowToolSpecs(options.workflows),
     ...createGitHubPublishToolSpecs(options.gitHubPublish),
     ...createGitHubPullRequestToolSpecs(options.gitHubPullRequests),
+    ...createMarketplaceToolSpecs(options.marketplace),
     ...createMcpToolSpecs(options.mcp),
     ...createWritableToolSpecs()
   ];

@@ -255,6 +255,12 @@ Available interactive tools are:
 - `languages.definition`
 - `languages.references`
 - `languages.hover`
+- `marketplace.plugins.search`
+- `marketplace.plugins.installed`
+- `marketplace.plugins.install` (approval required)
+- `marketplace.skills.search`
+- `marketplace.skills.installed`
+- `marketplace.skills.install` (approval required)
 - `mcp.list_tools`
 - `mcp.call_tool` (approval required)
 - `mcp.marketplace.search`

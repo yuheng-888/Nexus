@@ -15,6 +15,7 @@ import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
 import type { AgentGitHubPublishToolProvider } from "./agentGitHubPublishTools.js";
 import type { AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import type { AgentLanguageToolProvider } from "./agentLanguageTools.js";
+import type { AgentMarketplaceToolProvider } from "./agentMarketplaceTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
 import type { AgentScriptToolProvider } from "./agentScriptTools.js";
 import type { AgentTestToolProvider } from "./agentTestTools.js";
@@ -36,6 +37,7 @@ export interface AgentRuntimeServiceOptions {
   readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly interactiveToolRunner?: AgentInteractiveToolRunner;
   readonly languages?: AgentLanguageToolProvider;
+  readonly marketplace?: AgentMarketplaceToolProvider;
   readonly mcpTools?: AgentMcpToolProvider;
   readonly modelClient?: AgentModelClient;
   readonly rag?: RagContextProvider;
@@ -94,6 +96,7 @@ export class AgentRuntimeService {
       gitHubPublish: options.gitHubPublish,
       gitHubPullRequests: options.gitHubPullRequests,
       languages: options.languages,
+      marketplace: options.marketplace,
       mcp: options.mcpTools,
       rag: options.rag,
       reverse: options.reverse,
