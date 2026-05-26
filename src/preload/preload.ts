@@ -6,6 +6,7 @@ import type { LanguageCompletionList, LanguageDiagnostic, LanguageDocumentInput,
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "../ragContracts.js";
 import type { ReverseAnalysisRequest, ReverseAnalysisResult, ReverseAsarDiffRequest, ReverseAsarDiffResult, ReverseAsarExtractRequest, ReverseAsarExtractResult, ReverseAsarInspectRequest, ReverseAsarInspectResult, ReverseAsarPackRequest, ReverseAsarPackResult, ReverseJsHookGenerateRequest, ReverseJsHookGenerateResult, ReverseJsHookInjectRequest, ReverseJsHookInjectResult, ReverseJsHookRestoreRequest, ReverseJsHookRestoreResult, ReverseProject, ReverseProjectDraft, ReverseTargetDetection } from "../reverseContracts.js";
 import type { ShellRevealResult } from "../shellContracts.js";
+import type { NexusTestApi } from "../testContracts.js";
 import type { WorkflowDefinition, WorkflowDefinitionDraft, WorkflowRun, WorkflowRunRequest } from "../workflowContracts.js";
 
 const gitApi: NexusGitApi = {
@@ -217,6 +218,10 @@ const nexusApi = {
     profiles: (): Promise<readonly SubagentProfile[]> => ipcRenderer.invoke("nexus:subagents:profiles"),
     start: (options: SubagentStartOptions): Promise<SubagentRun> => ipcRenderer.invoke("nexus:subagents:start", options)
   },
+  tests: {
+    discover: () => ipcRenderer.invoke("nexus:tests:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:tests:run", request)
+  } satisfies NexusTestApi,
   workflows: {
     delete: (id: string): Promise<boolean> => ipcRenderer.invoke("nexus:workflows:delete", id),
     get: (id: string): Promise<WorkflowDefinition> => ipcRenderer.invoke("nexus:workflows:get", id),

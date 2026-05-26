@@ -162,6 +162,10 @@ const nexusApi = {
     profiles: () => ipcRenderer.invoke("nexus:subagents:profiles"),
     start: (options) => ipcRenderer.invoke("nexus:subagents:start", options)
   },
+  tests: {
+    discover: () => ipcRenderer.invoke("nexus:tests:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:tests:run", request)
+  },
   workflows: {
     delete: (id) => ipcRenderer.invoke("nexus:workflows:delete", id),
     get: (id) => ipcRenderer.invoke("nexus:workflows:get", id),

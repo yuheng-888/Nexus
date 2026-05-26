@@ -70,6 +70,20 @@ line previews without writing files. `apply` recomputes matches against the
 current workspace files, writes the replacements, and returns changed-file and
 replacement counts.
 
+## Tests
+
+```ts
+window.nexus.tests.discover(): Promise<TestDiscoveryResult>
+window.nexus.tests.run(request: TestRunRequest): Promise<TestRunResult>
+```
+
+The first test explorer backend supports npm projects with a `package.json`
+`test` script. Discovery uses ripgrep file listing for common `.test` and
+`.spec` JavaScript/TypeScript files while skipping generated/vendor folders.
+`run({ scope: "all" })` executes `npm test`; `run({ scope: "file", path })`
+executes `npm test -- <path>` and returns stdout, stderr, exit code, duration,
+and pass/fail status.
+
 ## Local RAG / Code Index
 
 ```ts

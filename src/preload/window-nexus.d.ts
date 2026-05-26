@@ -5,6 +5,7 @@ import type { NexusLanguageApi } from "../languageContracts.js";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "../ragContracts.js";
 import type { NexusReverseApi } from "../reverseContracts.js";
 import type { NexusShellApi } from "../shellContracts.js";
+import type { NexusTestApi } from "../testContracts.js";
 import type { NexusWorkflowApi } from "../workflowContracts.js";
 
 interface NexusApi {
@@ -88,6 +89,7 @@ interface NexusApi {
   terminal: {
     create(options: TerminalCreateOptions): Promise<SessionSnapshot>;
   };
+  tests: NexusTestApi;
   workspace: {
     get(): Promise<WorkspaceInfo>;
     open(): Promise<WorkspaceInfo | null>;

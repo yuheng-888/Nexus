@@ -22,6 +22,7 @@ import type {
   ReverseProjectDraft
 } from "../reverseContracts.js";
 import type { WorkflowDefinitionDraft, WorkflowRunRequest } from "../workflowContracts.js";
+import type { TestRunRequest } from "../testContracts.js";
 import { registerDialogHandlers } from "./dialogIpc.js";
 import { registerGitHandlers } from "./gitIpc.js";
 import { registerMarketplaceHandlers } from "./marketplaceIpc.js";
@@ -37,6 +38,7 @@ export function registerIpcHandlers(backend: NexusBackend): void {
   registerFileHandlers(backend);
   registerLanguageHandlers(backend);
   registerSearchHandlers(backend);
+  registerTestHandlers(backend);
   registerGitHandlers(backend);
   registerSessionHandlers(backend);
   registerConversationHandlers(backend);
@@ -124,6 +126,11 @@ function registerSearchHandlers(backend: NexusBackend): void {
   ipcMain.handle("nexus:search:replacePreview", (_event, request: SearchReplaceRequest) => {
     return backend.search.previewReplace(request);
   });
+}
+
+function registerTestHandlers(backend: NexusBackend): void {
+  ipcMain.handle("nexus:tests:discover", () => backend.tests.discover());
+  ipcMain.handle("nexus:tests:run", (_event, request: TestRunRequest) => backend.tests.run(request));
 }
 
 function registerSessionHandlers(backend: NexusBackend): void {

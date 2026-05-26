@@ -7,6 +7,7 @@ import type { McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddReq
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "./rag";
 import type { ReverseApi } from "./reverse";
 import type { ShellApi } from "./shell";
+import type { TestApi } from "./test";
 import type { WorkflowApi } from "./workflow";
 
 export type * from "./conversation";
@@ -18,6 +19,7 @@ export type * from "./mcp";
 export type * from "./rag";
 export type * from "./reverse";
 export type * from "./shell";
+export type * from "./test";
 export type * from "./workflow";
 
 export interface DirectoryEntry {
@@ -259,6 +261,7 @@ interface NexusApi {
   terminal: {
     create(options: TerminalCreateOptions): Promise<SessionSnapshot>;
   };
+  tests: TestApi;
   workspace: {
     get(): Promise<WorkspaceInfo>;
     open(): Promise<WorkspaceInfo | null>;

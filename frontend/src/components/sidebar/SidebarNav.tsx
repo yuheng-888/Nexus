@@ -1,12 +1,13 @@
 import React from "react";
 import { useStore, type SidebarPanel } from "../../store/useStore";
-import { Database, Files, Search, GitBranch, ListTree, Server, Package, Sparkles, Settings, Terminal, Workflow } from "lucide-react";
+import { Database, Files, Search, GitBranch, ListChecks, ListTree, Server, Package, Sparkles, Settings, Terminal, Workflow } from "lucide-react";
 
 const navItems: { id: SidebarPanel; icon: React.ReactNode; tooltip: string }[] = [
   { id: "files", icon: <Files size={20} />, tooltip: "文件管理器" },
   { id: "search", icon: <Search size={20} />, tooltip: "搜索" },
   { id: "outline", icon: <ListTree size={20} />, tooltip: "符号大纲" },
   { id: "git", icon: <GitBranch size={20} />, tooltip: "版本控制" },
+  { id: "tests", icon: <ListChecks size={20} />, tooltip: "测试" },
   { id: "rag", icon: <Database size={20} />, tooltip: "代码库索引" },
   { id: "workflows", icon: <Workflow size={20} />, tooltip: "工作流" },
   { id: "mcp", icon: <Server size={20} />, tooltip: "MCP 服务" },

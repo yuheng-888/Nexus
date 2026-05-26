@@ -19,6 +19,7 @@ import { ReverseService } from "./reverseService.js";
 import { SearchService } from "./searchService.js";
 import type { SessionManager } from "./sessionManager.js";
 import { SubagentService } from "./subagentService.js";
+import { TestService } from "./testService.js";
 import { WorkflowService } from "./workflowService.js";
 import { WorkspaceStateStore, type WorkspaceState } from "./workspaceStateStore.js";
 
@@ -52,6 +53,7 @@ export class NexusBackend {
   readonly reverse: ReverseService;
   readonly conversations: ConversationService;
   readonly subagents: SubagentService;
+  readonly tests: TestService;
   readonly workflows: WorkflowService;
   readonly apiConfig: ApiConfigService;
   private readonly agentRuntime: AgentRuntimeService;
@@ -73,6 +75,7 @@ export class NexusBackend {
     this.mcp = new McpService();
     this.rag = options.rag ?? new RagService({ workspaceRoot: config.root });
     this.reverse = options.reverse ?? new ReverseService();
+    this.tests = new TestService({ workspaceRoot: config.root });
     this.conversations = options.conversations ?? new ConversationService();
     this.apiConfig = options.apiConfig ?? new ApiConfigService();
     this.agentRuntime = new AgentRuntimeService({
@@ -124,6 +127,7 @@ export class NexusBackend {
     this.gitHubPr.setWorkspaceRoot(workspaceRoot);
     this.gitPublish.setWorkspaceRoot(workspaceRoot);
     this.rag.setWorkspaceRoot(workspaceRoot);
+    this.tests.setWorkspaceRoot(workspaceRoot);
     this.workflows.setWorkspaceRoot(workspaceRoot);
 
     return this.config;
