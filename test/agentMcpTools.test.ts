@@ -6,18 +6,32 @@ import type { AgentInteractiveToolContext } from "../src/main/agentInteractiveTo
 
 class FakeMcpProvider implements AgentMcpToolProvider {
   calls: Record<string, unknown>[] = [];
+  installArgs: Record<string, unknown>[] = [];
 
   async callTool(args: Record<string, unknown>): Promise<string> {
     this.calls = [...this.calls, args];
     return "clicked current browser tab";
   }
 
+  async installMarketplaceServer(args: Record<string, unknown>): Promise<string> {
+    this.installArgs = [...this.installArgs, args];
+    return "success: true\nMCP 服务 crawlio-browser 已安装";
+  }
+
   async listTools(): Promise<string> {
     return "chrome-mcp.click: Click the current browser page.";
   }
 
+  async previewInstallMarketplaceServer(args: Record<string, unknown>): Promise<string> {
+    return `Install MCP marketplace server: ${String(args.id)}`;
+  }
+
   async previewToolCall(args: Record<string, unknown>): Promise<string> {
     return `MCP call ${String(args.server)}.${String(args.tool)}`;
+  }
+
+  async searchMarketplace(args: Record<string, unknown>): Promise<string> {
+    return `mcp.so:crawlio-browser [mcp.so]\nquery: ${String(args.query)}`;
   }
 }
 
@@ -52,6 +66,23 @@ describe("NativeAgentInteractiveToolRunner MCP tools", () => {
       output: "clicked current browser tab"
     });
     expect(provider.calls).toEqual([{ arguments: { x: 1 }, server: "chrome-mcp", tool: "click" }]);
+  });
+
+  it("searches and installs MCP marketplace servers for the agent", async () => {
+    const provider = new FakeMcpProvider();
+    const runner = new NativeAgentInteractiveToolRunner({ mcp: provider });
+    const install = toolCall("mcp.marketplace.install", { id: "mcp.so:crawlio-browser" });
+
+    const search = await runner.runToolCall(toolCall("mcp.marketplace.search", { query: "browser", source: "mcp.so" }), fakeContext());
+    const preview = await runner.previewToolCall(install, fakeContext());
+    const result = await runner.runToolCall(install, fakeContext());
+
+    expect(runner.getToolDefinition("mcp.marketplace.search")).toMatchObject({ permission: "read" });
+    expect(runner.getToolDefinition("mcp.marketplace.install")).toMatchObject({ permission: "write" });
+    expect(search.output).toContain("mcp.so:crawlio-browser");
+    expect(preview).toBe("Install MCP marketplace server: mcp.so:crawlio-browser");
+    expect(result).toEqual({ name: "mcp.marketplace.install", ok: true, output: "success: true\nMCP 服务 crawlio-browser 已安装" });
+    expect(provider.installArgs).toEqual([{ id: "mcp.so:crawlio-browser" }]);
   });
 });
 

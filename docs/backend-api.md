@@ -257,6 +257,8 @@ Available interactive tools are:
 - `languages.hover`
 - `mcp.list_tools`
 - `mcp.call_tool` (approval required)
+- `mcp.marketplace.search`
+- `mcp.marketplace.install` (approval required)
 - `rag.retrieve_context`
 - `reverse.detect_target`
 - `reverse.scan_javascript`
