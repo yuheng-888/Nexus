@@ -258,9 +258,13 @@ Available interactive tools are:
 - `marketplace.plugins.search`
 - `marketplace.plugins.installed`
 - `marketplace.plugins.install` (approval required)
+- `marketplace.plugins.uninstall` (approval required)
+- `marketplace.plugins.toggle` (approval required)
 - `marketplace.skills.search`
 - `marketplace.skills.installed`
 - `marketplace.skills.install` (approval required)
+- `marketplace.skills.uninstall` (approval required)
+- `marketplace.skills.toggle` (approval required)
 - `mcp.list_tools`
 - `mcp.call_tool` (approval required)
 - `mcp.marketplace.search`

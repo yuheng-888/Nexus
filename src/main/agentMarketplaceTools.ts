@@ -9,8 +9,16 @@ export interface AgentMarketplaceToolProvider {
   listInstalledSkills(): Promise<string>;
   previewInstallPlugin(args: Record<string, unknown>): Promise<string>;
   previewInstallSkill(args: Record<string, unknown>): Promise<string>;
+  previewTogglePlugin(args: Record<string, unknown>): Promise<string>;
+  previewToggleSkill(args: Record<string, unknown>): Promise<string>;
+  previewUninstallPlugin(args: Record<string, unknown>): Promise<string>;
+  previewUninstallSkill(args: Record<string, unknown>): Promise<string>;
   searchPlugins(args: Record<string, unknown>): Promise<string>;
   searchSkills(args: Record<string, unknown>): Promise<string>;
+  togglePlugin(args: Record<string, unknown>): Promise<string>;
+  toggleSkill(args: Record<string, unknown>): Promise<string>;
+  uninstallPlugin(args: Record<string, unknown>): Promise<string>;
+  uninstallSkill(args: Record<string, unknown>): Promise<string>;
 }
 
 export interface MarketplaceToolService {
@@ -20,6 +28,10 @@ export interface MarketplaceToolService {
   getSkills(request?: SkillsSearchRequest): Promise<readonly Skill[]>;
   installPlugin(id: string): Promise<InstallResult>;
   installSkill(id: string): Promise<InstallResult>;
+  togglePlugin(id: string): Promise<InstallResult>;
+  toggleSkill(id: string): Promise<InstallResult>;
+  uninstallPlugin(id: string): Promise<InstallResult>;
+  uninstallSkill(id: string): Promise<InstallResult>;
 }
 
 export class NativeAgentMarketplaceToolProvider implements AgentMarketplaceToolProvider {
@@ -35,6 +47,22 @@ export class NativeAgentMarketplaceToolProvider implements AgentMarketplaceToolP
 
   async installSkill(args: Record<string, unknown>): Promise<string> {
     return formatInstallResult(await this.service.installSkill(readRequiredString(args, "id")));
+  }
+
+  async togglePlugin(args: Record<string, unknown>): Promise<string> {
+    return formatInstallResult(await this.service.togglePlugin(readRequiredString(args, "id")));
+  }
+
+  async toggleSkill(args: Record<string, unknown>): Promise<string> {
+    return formatInstallResult(await this.service.toggleSkill(readRequiredString(args, "id")));
+  }
+
+  async uninstallPlugin(args: Record<string, unknown>): Promise<string> {
+    return formatInstallResult(await this.service.uninstallPlugin(readRequiredString(args, "id")));
+  }
+
+  async uninstallSkill(args: Record<string, unknown>): Promise<string> {
+    return formatInstallResult(await this.service.uninstallSkill(readRequiredString(args, "id")));
   }
 
   async listInstalledPlugins(): Promise<string> {
@@ -53,6 +81,22 @@ export class NativeAgentMarketplaceToolProvider implements AgentMarketplaceToolP
     return `Install SkillsMP skill: ${readRequiredString(args, "id")}`;
   }
 
+  async previewTogglePlugin(args: Record<string, unknown>): Promise<string> {
+    return `Toggle VS Code plugin: ${readRequiredString(args, "id")}`;
+  }
+
+  async previewToggleSkill(args: Record<string, unknown>): Promise<string> {
+    return `Toggle SkillsMP skill: ${readRequiredString(args, "id")}`;
+  }
+
+  async previewUninstallPlugin(args: Record<string, unknown>): Promise<string> {
+    return `Uninstall VS Code plugin: ${readRequiredString(args, "id")}`;
+  }
+
+  async previewUninstallSkill(args: Record<string, unknown>): Promise<string> {
+    return `Uninstall SkillsMP skill: ${readRequiredString(args, "id")}`;
+  }
+
   async searchPlugins(args: Record<string, unknown>): Promise<string> {
     return formatPlugins(await this.service.getPlugins(readPluginSearchRequest(args)));
   }
@@ -63,6 +107,10 @@ export class NativeAgentMarketplaceToolProvider implements AgentMarketplaceToolP
 }
 
 export function createMarketplaceToolSpecs(provider: AgentMarketplaceToolProvider | undefined): readonly AgentInteractiveToolSpec[] {
+  return [...createPluginToolSpecs(provider), ...createSkillToolSpecs(provider)];
+}
+
+function createPluginToolSpecs(provider: AgentMarketplaceToolProvider | undefined): readonly AgentInteractiveToolSpec[] {
   return [
     readSpec(provider, {
       description: "Search VS Code Marketplace plugins.",
@@ -83,6 +131,25 @@ export function createMarketplaceToolSpecs(provider: AgentMarketplaceToolProvide
       previewMethod: "previewInstallPlugin",
       runMethod: "installPlugin"
     }),
+    writeSpec(provider, {
+      description: "Uninstall a VS Code Marketplace plugin.",
+      name: "marketplace.plugins.uninstall",
+      parameters: "id: string",
+      previewMethod: "previewUninstallPlugin",
+      runMethod: "uninstallPlugin"
+    }),
+    writeSpec(provider, {
+      description: "Enable or disable an installed VS Code Marketplace plugin.",
+      name: "marketplace.plugins.toggle",
+      parameters: "id: string",
+      previewMethod: "previewTogglePlugin",
+      runMethod: "togglePlugin"
+    })
+  ];
+}
+
+function createSkillToolSpecs(provider: AgentMarketplaceToolProvider | undefined): readonly AgentInteractiveToolSpec[] {
+  return [
     readSpec(provider, {
       description: "Search SkillsMP skills.",
       method: "searchSkills",
@@ -101,6 +168,20 @@ export function createMarketplaceToolSpecs(provider: AgentMarketplaceToolProvide
       parameters: "id: string",
       previewMethod: "previewInstallSkill",
       runMethod: "installSkill"
+    }),
+    writeSpec(provider, {
+      description: "Uninstall a SkillsMP skill.",
+      name: "marketplace.skills.uninstall",
+      parameters: "id: string",
+      previewMethod: "previewUninstallSkill",
+      runMethod: "uninstallSkill"
+    }),
+    writeSpec(provider, {
+      description: "Enable or disable an installed SkillsMP skill.",
+      name: "marketplace.skills.toggle",
+      parameters: "id: string",
+      previewMethod: "previewToggleSkill",
+      runMethod: "toggleSkill"
     })
   ];
 }
