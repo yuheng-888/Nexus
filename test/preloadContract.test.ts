@@ -70,10 +70,13 @@ describe("preload runtime contract", () => {
     expect((api.git as { discardAll?: unknown }).discardAll).toEqual(expect.any(Function));
     expect((api.git as { discardFile?: unknown }).discardFile).toEqual(expect.any(Function));
     expect((api.git as { fetch?: unknown }).fetch).toEqual(expect.any(Function));
+    expect((api.git as { init?: unknown }).init).toEqual(expect.any(Function));
     expect((api.git as { listBranches?: unknown }).listBranches).toEqual(expect.any(Function));
     expect((api.git as { log?: unknown }).log).toEqual(expect.any(Function));
     expect((api.git as { merge?: unknown }).merge).toEqual(expect.any(Function));
     expect((api.git as { pull?: unknown }).pull).toEqual(expect.any(Function));
+    expect((api.git as { publishSafetyScan?: unknown }).publishSafetyScan).toEqual(expect.any(Function));
+    expect((api.git as { publishToGitHub?: unknown }).publishToGitHub).toEqual(expect.any(Function));
     expect((api.git as { push?: unknown }).push).toEqual(expect.any(Function));
     expect((api.git as { rebase?: unknown }).rebase).toEqual(expect.any(Function));
     expect((api.git as { removeRemote?: unknown }).removeRemote).toEqual(expect.any(Function));

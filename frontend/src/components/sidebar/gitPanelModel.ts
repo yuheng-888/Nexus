@@ -1,4 +1,4 @@
-import type { GitBranchItem, GitCommandResult, GitFileChange, GitLogEntry, GitRemote } from "../../types/git";
+import type { GitBranchItem, GitCommandResult, GitFileChange, GitHubPublishResult, GitLogEntry, GitRemote } from "../../types/git";
 
 interface GitEmptyStateInput {
   readonly repository: boolean;
@@ -29,6 +29,17 @@ export function formatGitCommandResult(result: GitCommandResult): string {
   const text = [exitLine, body].filter(Boolean).join("\n");
 
   return text === "" ? "命令已执行，无输出" : text;
+}
+
+export function formatGitHubPublishResult(result: GitHubPublishResult): string {
+  const commit = result.commit === null ? (result.commitSkippedReason ?? "没有新的提交") : "已提交";
+  return [
+    `仓库: ${result.repository.htmlUrl}`,
+    `远端: ${result.remoteName} (${result.remoteAction === "added" ? "已添加" : "已更新"})`,
+    `分支: ${result.branch}`,
+    `提交: ${commit}`,
+    "推送完成"
+  ].join("\n");
 }
 
 export function gitChangeStatusLabel(change: GitFileChange): string {

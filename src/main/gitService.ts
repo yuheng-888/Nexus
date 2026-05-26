@@ -8,6 +8,7 @@ import type {
   GitDiffRequest,
   GitDiffResult,
   GitFetchRequest,
+  GitInitRequest,
   GitLogRequest,
   GitLogResult,
   GitPullRequest,
@@ -107,6 +108,10 @@ export class GitService {
 
   fetch(request: GitFetchRequest = {}, cwd = "."): Promise<GitCommandResult> {
     return this.run(["fetch", ...(request.prune === true ? ["--prune"] : []), ...optional(request.remote)], cwd);
+  }
+
+  init(request: GitInitRequest = {}, cwd = "."): Promise<GitCommandResult> {
+    return this.run(["init", "-b", requireText(request.branch ?? "main", "Branch name is required")], cwd);
   }
 
   pull(request: GitPullRequest = {}, cwd = "."): Promise<GitCommandResult> {

@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import type { GitCommandResult } from "../../types/git";
+import type { GitCommandResult, GitHubPublishResult } from "../../types/git";
 import type { DiffSelection } from "./gitPanelStateTypes";
 import { refreshGitData } from "./gitPanelRefresh";
-import { formatGitCommandResult } from "./gitPanelModel";
+import { formatGitCommandResult, formatGitHubPublishResult } from "./gitPanelModel";
 import type { GitDataSetters } from "./useGitDataState";
 
 export interface GitPanelRuntime {
@@ -56,12 +56,18 @@ export function useGitPanelRuntime(options: {
 
 function formatTaskResult(result: unknown): string {
   if (isGitCommandResult(result)) return formatGitCommandResult(result);
+  if (isGitHubPublishResult(result)) return formatGitHubPublishResult(result);
   return "";
 }
 
 function isGitCommandResult(value: unknown): value is GitCommandResult {
   return typeof value === "object" && value !== null
     && "exitCode" in value && "stdout" in value && "stderr" in value;
+}
+
+function isGitHubPublishResult(value: unknown): value is GitHubPublishResult {
+  return typeof value === "object" && value !== null
+    && "repository" in value && "push" in value && "safety" in value;
 }
 
 function toMessage(error: unknown): string {

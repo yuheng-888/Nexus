@@ -2,6 +2,7 @@ import { AlertCircle, GitBranch, Loader2, RefreshCw } from "lucide-react";
 import type { GitSummary } from "../../types/git";
 import { GitAdvancedView } from "./GitAdvancedView";
 import { gitEmptyStateText, shouldRefreshGitPanel } from "./gitPanelModel";
+import { GitPublishSection } from "./GitPublishSection";
 import { GitRepositoryView } from "./GitRepositoryView";
 import { GitWorktreeView } from "./GitWorktreeView";
 import { useGitPanelState } from "./useGitPanelState";
@@ -63,15 +64,21 @@ function GitBody({ state }: { readonly state: ReturnType<typeof useGitPanelState
   }
 
   if (!state.summary.repository) {
-    return <div style={emptyStyle}>{gitEmptyStateText({
-      repository: false,
-      stderr: state.summary.raw.stderr,
-      workspaceRoot: state.workspaceRoot
-    })}</div>;
+    return (
+      <div style={bodyStyle}>
+        <GitPublishSection state={state} />
+        <div style={emptyStyle}>{gitEmptyStateText({
+          repository: false,
+          stderr: state.summary.raw.stderr,
+          workspaceRoot: state.workspaceRoot
+        })}</div>
+      </div>
+    );
   }
 
   return (
     <div style={bodyStyle}>
+      <GitPublishSection state={state} />
       <GitRepositoryView state={state} />
       <GitWorktreeView state={state} />
       <GitAdvancedView state={state} />

@@ -145,6 +145,59 @@ export interface GitTagCreateRequest {
   readonly name: string;
 }
 
+export interface GitInitRequest {
+  readonly branch?: string;
+}
+
+export type GitHubRepositoryVisibility = "private" | "public";
+
+export interface GitPublishSafetyFinding {
+  readonly message: string;
+  readonly path: string;
+  readonly severity: "blocker" | "warning";
+  readonly type: "file-name" | "file-content";
+}
+
+export interface GitPublishSafetyReport {
+  readonly blocked: boolean;
+  readonly checkedFiles: number;
+  readonly findings: readonly GitPublishSafetyFinding[];
+}
+
+export interface GitHubPublishRequest {
+  readonly authorEmail?: string;
+  readonly authorName?: string;
+  readonly branch?: string;
+  readonly commitMessage?: string;
+  readonly description?: string;
+  readonly name: string;
+  readonly remoteName?: string;
+  readonly token: string;
+  readonly visibility: GitHubRepositoryVisibility;
+}
+
+export interface GitHubRepository {
+  readonly cloneUrl: string;
+  readonly fullName: string;
+  readonly htmlUrl: string;
+  readonly name: string;
+  readonly private: boolean;
+  readonly sshUrl: string;
+}
+
+export interface GitHubPublishResult {
+  readonly branch: string;
+  readonly commit: GitCommandResult | null;
+  readonly commitSkippedReason?: string;
+  readonly init: GitCommandResult | null;
+  readonly push: GitCommandResult;
+  readonly remote: GitCommandResult;
+  readonly remoteAction: "added" | "updated";
+  readonly remoteName: string;
+  readonly repository: GitHubRepository;
+  readonly safety: GitPublishSafetyReport;
+}
+
 export interface NexusGitApi {
   abortMerge(): Promise<GitCommandResult>;
   abortRebase(): Promise<GitCommandResult>;
@@ -160,10 +213,13 @@ export interface NexusGitApi {
   discardAll(): Promise<GitCommandResult>;
   discardFile(path: string): Promise<GitCommandResult>;
   fetch(request?: GitFetchRequest): Promise<GitCommandResult>;
+  init(request?: GitInitRequest): Promise<GitCommandResult>;
   listBranches(cwd?: string): Promise<GitBranchList>;
   log(request?: GitLogRequest): Promise<GitLogResult>;
   merge(branch: string): Promise<GitCommandResult>;
   pull(request?: GitPullRequest): Promise<GitCommandResult>;
+  publishSafetyScan(): Promise<GitPublishSafetyReport>;
+  publishToGitHub(request: GitHubPublishRequest): Promise<GitHubPublishResult>;
   push(request?: GitPushRequest): Promise<GitCommandResult>;
   rebase(branch: string): Promise<GitCommandResult>;
   removeRemote(name: string): Promise<GitCommandResult>;

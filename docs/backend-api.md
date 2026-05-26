@@ -102,6 +102,9 @@ git.commit(message): Promise<GitCommandResult>
 git.remotes(cwd?): Promise<GitRemote[]>
 git.addRemote(request) / git.removeRemote(name): Promise<GitCommandResult>
 git.fetch(request?) / git.pull(request?) / git.push(request?): Promise<GitCommandResult>
+git.init(request?): Promise<GitCommandResult>
+git.publishSafetyScan(): Promise<GitPublishSafetyReport>
+git.publishToGitHub(request): Promise<GitHubPublishResult>
 git.createBranch(request) / git.checkoutBranch(request) / git.deleteBranch(request): Promise<GitCommandResult>
 git.log(request?): Promise<GitLogResult>
 git.show(ref) / git.merge(branch) / git.rebase(branch): Promise<GitCommandResult>
@@ -123,9 +126,19 @@ commit messages throw an explicit error before invoking git.
 The expanded Git backend covers local workflow, branch management, remotes,
 network operations, history, merge/rebase, stash, discard, and tags. Operations
 call the real `git` binary in the opened workspace. Destructive
-methods such as `discardFile`, `discardAll`, `deleteBranch`, `deleteTag`, and
-`stashDrop` are explicit API calls and return the underlying Git command result
-or failure.
+discard/drop/delete operations are explicit API calls and return the real Git
+result.
+
+`init` creates a repository in the opened workspace with the requested branch,
+defaulting to `main`. `publishSafetyScan` walks publish candidates while
+skipping generated folders such as `node_modules`, `dist`, and `vendor`; it
+blocks sensitive file names, private key files, local home-directory paths, and
+common token-shaped strings. `publishToGitHub` does not call `gh` or any other
+third-party CLI. It ensures a publish `.gitignore`, runs the same safety scan,
+initializes Git when needed, stages and commits changed files, creates a GitHub
+repository through the GitHub REST API, upserts the requested remote, and pushes
+the requested branch with upstream tracking. The GitHub token is supplied per
+request and is not persisted by Nexus.
 
 ## API Configuration
 
