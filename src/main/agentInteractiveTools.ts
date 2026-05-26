@@ -1,5 +1,5 @@
 import type { DirectoryEntry, SearchMatch } from "../contracts.js";
-import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
+import { createGitToolSpecs } from "./agentGitTools.js";
 import { createGitHubPublishToolSpecs, type AgentGitHubPublishToolProvider } from "./agentGitHubPublishTools.js";
 import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { createLanguageToolSpecs, type AgentLanguageToolProvider } from "./agentLanguageTools.js";
@@ -10,7 +10,7 @@ import { createSearchReplaceToolSpecs } from "./agentSearchReplaceTools.js";
 import { createTestToolSpecs, type AgentTestToolProvider } from "./agentTestTools.js";
 import type { AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
-import { readLimit, readOptionalBoolean, readOptionalString, readRequiredString } from "./agentToolArgs.js";
+import { readLimit, readOptionalString, readRequiredString } from "./agentToolArgs.js";
 import { createWorkflowToolSpecs, type AgentWorkflowToolProvider } from "./agentWorkflowTools.js";
 import { createWritableToolSpecs } from "./agentWritableTools.js";
 import type { FileService } from "./fileService.js";
@@ -129,8 +129,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     readTool("workspace.read_file", "Read a UTF-8 text file from the workspace.", "path: string", readFile),
     readTool("workspace.search", "Search workspace text with ripgrep.", "query: string, cwd?: string, limit?: number", searchWorkspace),
     ...createSearchReplaceToolSpecs(),
-    readTool("git.status", "Read git status for the workspace.", "cwd?: string", readGitStatus),
-    readTool("git.diff", "Read git diff without modifying files.", "cwd?: string, path?: string, staged?: boolean", readGitDiff),
+    ...createGitToolSpecs(),
     readTool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
     readTool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
     readTool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse)),
@@ -173,19 +172,6 @@ async function searchWorkspace(args: Record<string, unknown>, context: AgentInte
   return formatSearchMatches(matches, readLimit(args, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT));
 }
 
-async function readGitStatus(args: Record<string, unknown>, context: AgentInteractiveToolContext): Promise<string> {
-  return formatGitCommandResult(await context.git.status(readOptionalString(args, "cwd") ?? context.cwd));
-}
-
-async function readGitDiff(args: Record<string, unknown>, context: AgentInteractiveToolContext): Promise<string> {
-  const result = await context.git.diff({
-    cwd: readOptionalString(args, "cwd") ?? context.cwd,
-    path: readOptionalString(args, "path"),
-    staged: readOptionalBoolean(args, "staged")
-  });
-  return formatGitDiffResult(result);
-}
-
 function retrieveRagContext(provider: RagContextProvider | undefined): AgentInteractiveToolSpec["run"] {
   return async (args, context) => {
     if (provider === undefined) throw new Error("Local RAG is not configured.");
@@ -223,16 +209,6 @@ function formatSearchMatches(matches: readonly SearchMatch[], limit: number): st
   const shown = matches.slice(0, limit).map((match) => `${match.path}:${match.line}: ${match.preview}`);
   const omitted = matches.length > limit ? [`... ${matches.length - limit} more matches omitted by limit ${limit}.`] : [];
   return [...shown, ...omitted].join("\n");
-}
-
-function formatGitCommandResult(result: GitCommandResult): string {
-  const stdout = result.stdout.trimEnd();
-  const stderr = result.stderr.trimEnd();
-  return [`exitCode=${result.exitCode}`, stdout === "" ? "stdout: <empty>" : `stdout:\n${stdout}`, stderr === "" ? "" : `stderr:\n${stderr}`].filter(Boolean).join("\n");
-}
-
-function formatGitDiffResult(result: GitDiffResult): string {
-  return [`staged=${result.staged}`, result.path === undefined ? "" : `path=${result.path}`, formatGitCommandResult(result)].filter(Boolean).join("\n");
 }
 
 function requireWorkspaceRoot(context: AgentInteractiveToolContext): string {

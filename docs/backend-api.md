@@ -244,10 +244,41 @@ Available interactive tools are:
 - `workspace.replace_all` (approval required)
 - `workspace.write_file` (approval required)
 - `git.status`
+- `git.summary`
+- `git.branches`
+- `git.list_branches`
 - `git.diff`
+- `git.remotes`
+- `git.log`
+- `git.show`
+- `git.stash_list`
+- `git.tag_list`
+- `git.init` (approval required)
 - `git.stage` (approval required)
 - `git.unstage` (approval required)
+- `git.stage_all` (approval required)
+- `git.unstage_all` (approval required)
 - `git.commit` (approval required)
+- `git.create_branch` (approval required)
+- `git.checkout_branch` (approval required)
+- `git.delete_branch` (approval required)
+- `git.add_remote` (approval required)
+- `git.remove_remote` (approval required)
+- `git.fetch` (approval required)
+- `git.pull` (approval required)
+- `git.push` (approval required)
+- `git.merge` (approval required)
+- `git.rebase` (approval required)
+- `git.abort_merge` (approval required)
+- `git.abort_rebase` (approval required)
+- `git.stash_push` (approval required)
+- `git.stash_apply` (approval required)
+- `git.stash_pop` (approval required)
+- `git.stash_drop` (approval required)
+- `git.discard_file` (approval required)
+- `git.discard_all` (approval required)
+- `git.create_tag` (approval required)
+- `git.delete_tag` (approval required)
 - `github.publish_safety_scan`
 - `github.publish_repository` (approval required)
 - `languages.diagnostics`
