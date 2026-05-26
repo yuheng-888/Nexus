@@ -248,6 +248,11 @@ Available interactive tools are:
 - `git.stage` (approval required)
 - `git.unstage` (approval required)
 - `git.commit` (approval required)
+- `languages.diagnostics`
+- `languages.document_symbols`
+- `languages.definition`
+- `languages.references`
+- `languages.hover`
 - `mcp.list_tools`
 - `mcp.call_tool` (approval required)
 - `rag.retrieve_context`

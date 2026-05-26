@@ -4,6 +4,12 @@ export function readRequiredString(args: Record<string, unknown>, key: string): 
   return value;
 }
 
+export function readRequiredNumber(args: Record<string, unknown>, key: string): number {
+  const value = args[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Tool argument required: ${key}`);
+  return value;
+}
+
 export function readOptionalString(args: Record<string, unknown>, key: string): string | undefined {
   const value = args[key];
   return typeof value === "string" && value.trim() !== "" ? value : undefined;

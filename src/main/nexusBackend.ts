@@ -11,6 +11,7 @@ import { GitPublishService } from "./gitPublishService.js";
 import { LanguageService } from "./languageService.js";
 import { MarketplaceService } from "./marketplaceService.js";
 import { NativeAgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
+import { NativeAgentLanguageToolProvider } from "./agentLanguageTools.js";
 import { NativeAgentMcpToolProvider } from "./agentMcpTools.js";
 import { NativeAgentScriptToolProvider } from "./agentScriptTools.js";
 import { NativeAgentTestToolProvider } from "./agentTestTools.js";
@@ -89,6 +90,7 @@ export class NexusBackend {
       files: this.files,
       git: this.git,
       gitHubPullRequests: new NativeAgentGitHubPullRequestToolProvider({ service: this.gitHubPr }),
+      languages: new NativeAgentLanguageToolProvider({ service: this.languages }),
       mcpTools: new NativeAgentMcpToolProvider({ service: this.mcp }),
       modelClient: options.modelClient,
       rag: this.rag,

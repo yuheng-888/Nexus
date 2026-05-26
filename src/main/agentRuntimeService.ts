@@ -13,6 +13,7 @@ import { MAX_TOOL_ROUNDS, runAgentToolLoop } from "./agentToolLoop.js";
 import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
 import type { AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
+import type { AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
 import type { AgentScriptToolProvider } from "./agentScriptTools.js";
 import type { AgentTestToolProvider } from "./agentTestTools.js";
@@ -31,6 +32,7 @@ export interface AgentRuntimeServiceOptions {
   readonly git: GitService;
   readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly interactiveToolRunner?: AgentInteractiveToolRunner;
+  readonly languages?: AgentLanguageToolProvider;
   readonly mcpTools?: AgentMcpToolProvider;
   readonly modelClient?: AgentModelClient;
   readonly rag?: RagContextProvider;
@@ -86,6 +88,7 @@ export class AgentRuntimeService {
     this.git = options.git;
     this.interactiveToolRunner = options.interactiveToolRunner ?? new NativeAgentInteractiveToolRunner({
       gitHubPullRequests: options.gitHubPullRequests,
+      languages: options.languages,
       mcp: options.mcpTools,
       rag: options.rag,
       reverse: options.reverse,
