@@ -12,6 +12,7 @@ import { createSessionToolApproval } from "./agentToolApproval.js";
 import { MAX_TOOL_ROUNDS, runAgentToolLoop } from "./agentToolLoop.js";
 import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
+import type { AgentMcpToolProvider } from "./agentMcpTools.js";
 import type { ConversationService } from "./conversationService.js";
 import type { FileService } from "./fileService.js";
 import type { GitService } from "./gitService.js";
@@ -26,6 +27,7 @@ export interface AgentRuntimeServiceOptions {
   readonly files: FileService;
   readonly git: GitService;
   readonly interactiveToolRunner?: AgentInteractiveToolRunner;
+  readonly mcpTools?: AgentMcpToolProvider;
   readonly modelClient?: AgentModelClient;
   readonly rag?: RagContextProvider;
   readonly reverse?: ReverseContextProvider;
@@ -77,6 +79,7 @@ export class AgentRuntimeService {
     this.files = options.files;
     this.git = options.git;
     this.interactiveToolRunner = options.interactiveToolRunner ?? new NativeAgentInteractiveToolRunner({
+      mcp: options.mcpTools,
       rag: options.rag,
       reverse: options.reverse
     });

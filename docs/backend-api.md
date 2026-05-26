@@ -206,6 +206,8 @@ Available interactive tools are:
 - `git.stage` (approval required)
 - `git.unstage` (approval required)
 - `git.commit` (approval required)
+- `mcp.list_tools`
+- `mcp.call_tool` (approval required)
 - `rag.retrieve_context`
 - `reverse.detect_target`
 - `reverse.scan_javascript`

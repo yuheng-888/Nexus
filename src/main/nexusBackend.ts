@@ -9,6 +9,7 @@ import { GitService } from "./gitService.js";
 import { GitPublishService } from "./gitPublishService.js";
 import { LanguageService } from "./languageService.js";
 import { MarketplaceService } from "./marketplaceService.js";
+import { NativeAgentMcpToolProvider } from "./agentMcpTools.js";
 import { McpService } from "./mcpService.js";
 import { resolveWorkspacePath } from "./pathGuards.js";
 import { RagService } from "./ragService.js";
@@ -75,6 +76,7 @@ export class NexusBackend {
       conversations: this.conversations,
       files: this.files,
       git: this.git,
+      mcpTools: new NativeAgentMcpToolProvider({ service: this.mcp }),
       modelClient: options.modelClient,
       rag: this.rag,
       reverse: this.reverse,
