@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatBranchMeta,
   formatGitCommandResult,
+  formatGitHubPullRequestResult,
   formatGitLogMeta,
   gitEmptyStateText,
   formatRemoteSummary,
@@ -9,7 +10,7 @@ import {
   shouldRefreshGitPanel,
   sortGitBranches
 } from "../frontend/src/components/sidebar/gitPanelModel.js";
-import type { GitBranchItem, GitCommandResult, GitFileChange, GitLogEntry, GitRemote } from "../frontend/src/types/git.js";
+import type { GitBranchItem, GitCommandResult, GitFileChange, GitHubPullRequest, GitLogEntry, GitRemote } from "../frontend/src/types/git.js";
 
 describe("git panel model", () => {
   it("sorts the current branch first and keeps the rest alphabetical", () => {
@@ -32,6 +33,15 @@ describe("git panel model", () => {
     expect(formatGitCommandResult(result({ stdout: "ok\n" }))).toBe("ok");
     expect(formatGitCommandResult(result({ exitCode: 1, stderr: "boom\n" }))).toBe("退出码 1\nboom");
     expect(formatGitCommandResult(result({ stdout: "", stderr: "" }))).toBe("命令已执行，无输出");
+  });
+
+  it("formats GitHub pull request results", () => {
+    expect(formatGitHubPullRequestResult(pullRequest())).toBe([
+      "PR #7: Add Nexus",
+      "分支: feature/nexus -> main",
+      "作者: ada",
+      "链接: https://github.com/nexus/demo/pull/7"
+    ].join("\n"));
   });
 
   it("formats branch metadata without hiding ahead or behind counts", () => {
@@ -73,6 +83,18 @@ function commit(): GitLogEntry {
     hash: "abc123456789",
     shortHash: "abc1234",
     subject: "Ship Nexus git panel"
+  };
+}
+
+function pullRequest(): GitHubPullRequest {
+  return {
+    authorLogin: "ada",
+    baseRef: "main",
+    headRef: "feature/nexus",
+    htmlUrl: "https://github.com/nexus/demo/pull/7",
+    number: 7,
+    state: "open",
+    title: "Add Nexus"
   };
 }
 

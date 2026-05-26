@@ -3,6 +3,7 @@ import type { GitSummary } from "../../types/git";
 import { GitAdvancedView } from "./GitAdvancedView";
 import { gitEmptyStateText, shouldRefreshGitPanel } from "./gitPanelModel";
 import { GitPublishSection } from "./GitPublishSection";
+import { GitPullRequestSection } from "./GitPullRequestSection";
 import { GitRepositoryView } from "./GitRepositoryView";
 import { GitWorktreeView } from "./GitWorktreeView";
 import { useGitPanelState } from "./useGitPanelState";
@@ -80,6 +81,7 @@ function GitBody({ state }: { readonly state: ReturnType<typeof useGitPanelState
     <div style={bodyStyle}>
       <GitPublishSection state={state} />
       <GitRepositoryView state={state} />
+      <GitPullRequestSection state={state} />
       <GitWorktreeView state={state} />
       <GitAdvancedView state={state} />
     </div>

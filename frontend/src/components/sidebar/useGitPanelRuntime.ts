@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
-import type { GitCommandResult, GitHubPublishResult } from "../../types/git";
+import type { GitCommandResult, GitHubPublishResult, GitHubPullRequest } from "../../types/git";
 import type { DiffSelection } from "./gitPanelStateTypes";
 import { refreshGitData } from "./gitPanelRefresh";
-import { formatGitCommandResult, formatGitHubPublishResult } from "./gitPanelModel";
+import { formatGitCommandResult, formatGitHubPublishResult, formatGitHubPullRequestResult } from "./gitPanelModel";
 import type { GitDataSetters } from "./useGitDataState";
 
 export interface GitPanelRuntime {
@@ -57,6 +57,7 @@ export function useGitPanelRuntime(options: {
 function formatTaskResult(result: unknown): string {
   if (isGitCommandResult(result)) return formatGitCommandResult(result);
   if (isGitHubPublishResult(result)) return formatGitHubPublishResult(result);
+  if (isGitHubPullRequest(result)) return formatGitHubPullRequestResult(result);
   return "";
 }
 
@@ -68,6 +69,11 @@ function isGitCommandResult(value: unknown): value is GitCommandResult {
 function isGitHubPublishResult(value: unknown): value is GitHubPublishResult {
   return typeof value === "object" && value !== null
     && "repository" in value && "push" in value && "safety" in value;
+}
+
+function isGitHubPullRequest(value: unknown): value is GitHubPullRequest {
+  return typeof value === "object" && value !== null
+    && "htmlUrl" in value && "number" in value && "baseRef" in value && "headRef" in value;
 }
 
 function toMessage(error: unknown): string {
