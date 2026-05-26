@@ -300,7 +300,11 @@ Available interactive tools are:
 - `mcp.call_tool` (approval required)
 - `mcp.marketplace.search`
 - `mcp.marketplace.install` (approval required)
+- `rag.index_status`
+- `rag.search`
 - `rag.retrieve_context`
+- `rag.build_index` (approval required)
+- `rag.clear_index` (approval required)
 - `reverse.detect_target`
 - `reverse.scan_javascript`
 - `scripts.discover`

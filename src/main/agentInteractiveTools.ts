@@ -5,11 +5,12 @@ import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvid
 import { createLanguageToolSpecs, type AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import { createMarketplaceToolSpecs, type AgentMarketplaceToolProvider } from "./agentMarketplaceTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
+import { createRagToolSpecs, type AgentRagToolProvider } from "./agentRagTools.js";
 import { createScriptToolSpecs, type AgentScriptToolProvider } from "./agentScriptTools.js";
 import { createSearchReplaceToolSpecs } from "./agentSearchReplaceTools.js";
 import { createTestToolSpecs, type AgentTestToolProvider } from "./agentTestTools.js";
 import type { AgentToolCall } from "./agentToolProtocol.js";
-import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
+import type { AgentToolResult } from "./agentTools.js";
 import { readLimit, readOptionalString, readRequiredString } from "./agentToolArgs.js";
 import { createWorkflowToolSpecs, type AgentWorkflowToolProvider } from "./agentWorkflowTools.js";
 import { createWritableToolSpecs } from "./agentWritableTools.js";
@@ -52,7 +53,7 @@ export interface NativeAgentInteractiveToolRunnerOptions {
   readonly languages?: AgentLanguageToolProvider;
   readonly marketplace?: AgentMarketplaceToolProvider;
   readonly mcp?: AgentMcpToolProvider;
-  readonly rag?: RagContextProvider;
+  readonly rag?: AgentRagToolProvider;
   readonly reverse?: ReverseContextProvider;
   readonly scripts?: AgentScriptToolProvider;
   readonly tests?: AgentTestToolProvider;
@@ -66,9 +67,7 @@ export interface AgentInteractiveToolSpec extends AgentInteractiveToolDefinition
   run(args: Record<string, unknown>, context: AgentInteractiveToolContext): Promise<string>;
 }
 
-const DEFAULT_RAG_LIMIT = 6;
 const DEFAULT_SEARCH_LIMIT = 20;
-const MAX_RAG_LIMIT = 12;
 const MAX_SEARCH_LIMIT = 50;
 
 export class NativeAgentInteractiveToolRunner implements AgentInteractiveToolRunner {
@@ -130,7 +129,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     readTool("workspace.search", "Search workspace text with ripgrep.", "query: string, cwd?: string, limit?: number", searchWorkspace),
     ...createSearchReplaceToolSpecs(),
     ...createGitToolSpecs(),
-    readTool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
+    ...createRagToolSpecs(options.rag),
     readTool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
     readTool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse)),
     ...createLanguageToolSpecs(options.languages),
@@ -170,16 +169,6 @@ async function searchWorkspace(args: Record<string, unknown>, context: AgentInte
     query: readRequiredString(args, "query")
   });
   return formatSearchMatches(matches, readLimit(args, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT));
-}
-
-function retrieveRagContext(provider: RagContextProvider | undefined): AgentInteractiveToolSpec["run"] {
-  return async (args, context) => {
-    if (provider === undefined) throw new Error("Local RAG is not configured.");
-    const limit = readLimit(args, DEFAULT_RAG_LIMIT, MAX_RAG_LIMIT);
-    const bundle = await provider.context({ limit, query: readOptionalString(args, "query") ?? context.prompt });
-    if (bundle.results.length === 0) return "No local RAG results matched the query.";
-    return bundle.results.map((result) => `${result.path}:${result.startLine}-${result.endLine}\n${result.content}`).join("\n\n");
-  };
 }
 
 function detectReverseTarget(provider: ReverseContextProvider | undefined): AgentInteractiveToolSpec["run"] {

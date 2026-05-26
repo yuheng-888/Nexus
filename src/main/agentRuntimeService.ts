@@ -17,6 +17,7 @@ import type { AgentGitHubPullRequestToolProvider } from "./agentGitHubPullReques
 import type { AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import type { AgentMarketplaceToolProvider } from "./agentMarketplaceTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
+import type { AgentRagToolProvider } from "./agentRagTools.js";
 import type { AgentScriptToolProvider } from "./agentScriptTools.js";
 import type { AgentTestToolProvider } from "./agentTestTools.js";
 import type { AgentWorkflowToolProvider } from "./agentWorkflowTools.js";
@@ -40,7 +41,7 @@ export interface AgentRuntimeServiceOptions {
   readonly marketplace?: AgentMarketplaceToolProvider;
   readonly mcpTools?: AgentMcpToolProvider;
   readonly modelClient?: AgentModelClient;
-  readonly rag?: RagContextProvider;
+  readonly rag?: AgentRagToolProvider;
   readonly reverse?: ReverseContextProvider;
   readonly scripts?: AgentScriptToolProvider;
   readonly search: SearchService;
