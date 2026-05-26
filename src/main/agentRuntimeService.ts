@@ -12,6 +12,7 @@ import { createSessionToolApproval } from "./agentToolApproval.js";
 import { MAX_TOOL_ROUNDS, runAgentToolLoop } from "./agentToolLoop.js";
 import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
+import type { AgentGitHubPublishToolProvider } from "./agentGitHubPublishTools.js";
 import type { AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import type { AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
@@ -31,6 +32,7 @@ export interface AgentRuntimeServiceOptions {
   readonly contextTokenLimit?: number;
   readonly files: FileService;
   readonly git: GitService;
+  readonly gitHubPublish?: AgentGitHubPublishToolProvider;
   readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly interactiveToolRunner?: AgentInteractiveToolRunner;
   readonly languages?: AgentLanguageToolProvider;
@@ -89,6 +91,7 @@ export class AgentRuntimeService {
     this.files = options.files;
     this.git = options.git;
     this.interactiveToolRunner = options.interactiveToolRunner ?? new NativeAgentInteractiveToolRunner({
+      gitHubPublish: options.gitHubPublish,
       gitHubPullRequests: options.gitHubPullRequests,
       languages: options.languages,
       mcp: options.mcpTools,

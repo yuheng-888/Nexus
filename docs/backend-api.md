@@ -248,6 +248,8 @@ Available interactive tools are:
 - `git.stage` (approval required)
 - `git.unstage` (approval required)
 - `git.commit` (approval required)
+- `github.publish_safety_scan`
+- `github.publish_repository` (approval required)
 - `languages.diagnostics`
 - `languages.document_symbols`
 - `languages.definition`

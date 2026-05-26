@@ -1,5 +1,6 @@
 import type { DirectoryEntry, SearchMatch } from "../contracts.js";
 import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
+import { createGitHubPublishToolSpecs, type AgentGitHubPublishToolProvider } from "./agentGitHubPublishTools.js";
 import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { createLanguageToolSpecs, type AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
@@ -45,6 +46,7 @@ export interface AgentInteractiveToolRunner {
 }
 
 export interface NativeAgentInteractiveToolRunnerOptions {
+  readonly gitHubPublish?: AgentGitHubPublishToolProvider;
   readonly gitHubPullRequests?: AgentGitHubPullRequestToolProvider;
   readonly languages?: AgentLanguageToolProvider;
   readonly mcp?: AgentMcpToolProvider;
@@ -134,6 +136,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     ...createScriptToolSpecs(options.scripts),
     ...createTestToolSpecs(options.tests),
     ...createWorkflowToolSpecs(options.workflows),
+    ...createGitHubPublishToolSpecs(options.gitHubPublish),
     ...createGitHubPullRequestToolSpecs(options.gitHubPullRequests),
     ...createMcpToolSpecs(options.mcp),
     ...createWritableToolSpecs()
