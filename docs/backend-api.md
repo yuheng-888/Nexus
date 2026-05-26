@@ -183,6 +183,24 @@ window.nexus.agent.start(options: AgentStartOptions): Promise<SessionSnapshot>
 Starts a Nexus-native agent runtime session. The runtime uses the active model
 configuration from `window.nexus.api`, executes Nexus backend tools for project
 context, and streams JSON session events through the shared session event API.
+During a run, the model can request additional read-only native tools by
+emitting `nexus.tool_call` JSON objects. Nexus executes those calls, streams
+`agent.tool.requested` and `agent.tool.completed` audit events, sends
+`nexus.tool_result` messages back to the model, and only persists the final
+assistant response. If a model keeps requesting tools after the runtime limit,
+the session fails with an explicit tool-loop error instead of silently falling
+back.
+
+Available interactive tools are:
+
+- `workspace.list_directory`
+- `workspace.read_file`
+- `workspace.search`
+- `git.status`
+- `git.diff`
+- `rag.retrieve_context`
+- `reverse.detect_target`
+- `reverse.scan_javascript`
 
 Start the main assistant:
 

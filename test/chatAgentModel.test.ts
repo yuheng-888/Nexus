@@ -33,6 +33,7 @@ describe("parseAgentOutput", () => {
   it("hides native tool events instead of showing raw JSON", () => {
     const buffer = [
       JSON.stringify({ type: "agent.tools.started" }),
+      JSON.stringify({ arguments: { path: "src/app.ts" }, id: "read-app", name: "workspace.read_file", type: "agent.tool.requested" }),
       JSON.stringify({ name: "workspace.list_directory", ok: true, output: "dir src", type: "agent.tool.completed" }),
       JSON.stringify({ name: "rag.retrieve_context", ok: false, output: "Code index is missing.", type: "agent.tool.completed" })
     ].join("\n");

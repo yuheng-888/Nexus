@@ -1,7 +1,14 @@
 import type { AgentMessageAttachment, ApiConfig, SessionKind, SessionSnapshot, SubagentProfile } from "../contracts.js";
 import type { RuntimeSessionController, SessionManager } from "./sessionManager.js";
 import { HttpAgentModelClient, assertRunnableConfig, type AgentModelClient, type AgentModelMessage } from "./agentModelClient.js";
+import {
+  NativeAgentInteractiveToolRunner,
+  type AgentInteractiveToolContext,
+  type AgentInteractiveToolRunner
+} from "./agentInteractiveTools.js";
 import { NativeAgentToolRunner, type AgentToolResult, type AgentToolRunner, type RagContextProvider } from "./agentTools.js";
+import { buildAgentSystemPrompt } from "./agentSystemPrompt.js";
+import { MAX_TOOL_ROUNDS, runAgentToolLoop } from "./agentToolLoop.js";
 import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
 import type { ConversationService } from "./conversationService.js";
@@ -17,6 +24,7 @@ export interface AgentRuntimeServiceOptions {
   readonly contextTokenLimit?: number;
   readonly files: FileService;
   readonly git: GitService;
+  readonly interactiveToolRunner?: AgentInteractiveToolRunner;
   readonly modelClient?: AgentModelClient;
   readonly rag?: RagContextProvider;
   readonly reverse?: ReverseContextProvider;
@@ -55,6 +63,7 @@ export class AgentRuntimeService {
   private readonly contextTokenLimit: number | undefined;
   private readonly files: FileService;
   private readonly git: GitService;
+  private readonly interactiveToolRunner: AgentInteractiveToolRunner;
   private readonly modelClient: AgentModelClient;
   private readonly search: SearchService;
   private readonly sessions: SessionManager;
@@ -66,6 +75,10 @@ export class AgentRuntimeService {
     this.contextTokenLimit = options.contextTokenLimit;
     this.files = options.files;
     this.git = options.git;
+    this.interactiveToolRunner = options.interactiveToolRunner ?? new NativeAgentInteractiveToolRunner({
+      rag: options.rag,
+      reverse: options.reverse
+    });
     this.modelClient = options.modelClient ?? new HttpAgentModelClient();
     this.search = options.search;
     this.sessions = options.sessions;
@@ -105,9 +118,14 @@ export class AgentRuntimeService {
       emit(controller, "agent.started", toStartedEvent(input));
       const tools = await this.runStartupTools(input, controller);
       const messages = await this.buildModelMessages(input, tools);
-      const response = await this.modelClient.complete({
+      const response = await runAgentToolLoop({
         config: input.config,
-        messages: attachImagesToLastUserMessage(messages, input.attachments)
+        context: this.buildToolContext(input),
+        emit: (type, payload) => emit(controller, type, payload),
+        messages: attachImagesToLastUserMessage(messages, input.attachments),
+        modelClient: this.modelClient,
+        signal: controller.signal,
+        toolRunner: this.interactiveToolRunner
       });
       await this.persistAssistantMessage(input, response.text);
       emit(controller, "agent.message", { message: response.text });
@@ -149,7 +167,12 @@ export class AgentRuntimeService {
     input: AgentRuntimeRunInput,
     tools: readonly AgentToolResult[]
   ): Promise<readonly AgentModelMessage[]> {
-    const systemPrompt = buildSystemPrompt(input, tools);
+    const systemPrompt = buildAgentSystemPrompt({
+      input,
+      interactiveTools: this.interactiveToolRunner.listTools(),
+      maxToolRounds: MAX_TOOL_ROUNDS,
+      startupTools: tools
+    });
     if (this.conversations === undefined || input.conversationId === undefined) {
       return buildStatelessMessages(input, systemPrompt);
     }
@@ -172,6 +195,17 @@ export class AgentRuntimeService {
       text,
       getContextTokenLimit(input.config, this.contextTokenLimit)
     );
+  }
+
+  private buildToolContext(input: AgentRuntimeRunInput): AgentInteractiveToolContext {
+    return {
+      cwd: input.cwdForTools,
+      files: this.files,
+      git: this.git,
+      prompt: input.prompt,
+      search: this.search,
+      workspaceRoot: input.workspaceRoot
+    };
   }
 }
 
@@ -215,42 +249,9 @@ function getContextTokenLimit(config: ApiConfig, override: number | undefined): 
   return Math.max(MIN_USABLE_CONTEXT_TOKENS, DEFAULT_CONTEXT_WINDOW_TOKENS - config.maxTokens);
 }
 
-function buildSystemPrompt(input: AgentRuntimeRunInput, tools: readonly AgentToolResult[]): string {
-  return [
-    "You are Nexus, the native coding agent inside the Nexus IDE.",
-    "Use the workspace context provided by Nexus backend tools. Surface blockers explicitly.",
-    input.profile === undefined ? "" : `Active subagent profile: ${input.profile.name}.`,
-    `Workspace: ${formatWorkspace(input.workspaceRoot)}`,
-    `Working directory: ${formatWorkingDirectory(input)}`,
-    "",
-    "Native tool results:",
-    formatToolResults(tools)
-  ].filter(Boolean).join("\n");
-}
-
 function resolveRuntimeCwd(workspaceRoot: string | null, cwd: string): string {
   if (workspaceRoot === null) return process.cwd();
   return resolveWorkspacePath(workspaceRoot, cwd);
-}
-
-function formatWorkspace(workspaceRoot: string | null): string {
-  if (workspaceRoot !== null) return workspaceRoot;
-  return "No workspace is open. Project context tools are unavailable until a workspace is opened.";
-}
-
-function formatWorkingDirectory(input: AgentRuntimeRunInput): string {
-  if (input.workspaceRoot === null) return "No workspace working directory";
-  return input.cwdForTools;
-}
-
-function formatToolResults(results: readonly AgentToolResult[]): string {
-  if (results.length === 0) {
-    return "No startup tools were executed.";
-  }
-
-  return results.map((result) => {
-    return `[${result.ok ? "ok" : "failed"}] ${result.name}\n${result.output}`;
-  }).join("\n\n");
 }
 
 function toStartedEvent(input: AgentRuntimeRunInput): object {
