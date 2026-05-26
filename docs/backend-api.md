@@ -253,6 +253,8 @@ Available interactive tools are:
 - `rag.retrieve_context`
 - `reverse.detect_target`
 - `reverse.scan_javascript`
+- `scripts.discover`
+- `scripts.run` (approval required)
 - `tests.discover`
 - `tests.run` (approval required)
 

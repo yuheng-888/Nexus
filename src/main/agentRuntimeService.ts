@@ -14,6 +14,7 @@ import type { ApiConfigService } from "./apiConfigService.js";
 import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
 import type { AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
+import type { AgentScriptToolProvider } from "./agentScriptTools.js";
 import type { AgentTestToolProvider } from "./agentTestTools.js";
 import type { ConversationService } from "./conversationService.js";
 import type { FileService } from "./fileService.js";
@@ -34,6 +35,7 @@ export interface AgentRuntimeServiceOptions {
   readonly modelClient?: AgentModelClient;
   readonly rag?: RagContextProvider;
   readonly reverse?: ReverseContextProvider;
+  readonly scripts?: AgentScriptToolProvider;
   readonly search: SearchService;
   readonly sessions: SessionManager;
   readonly tests?: AgentTestToolProvider;
@@ -87,6 +89,7 @@ export class AgentRuntimeService {
       mcp: options.mcpTools,
       rag: options.rag,
       reverse: options.reverse,
+      scripts: options.scripts,
       tests: options.tests
     });
     this.modelClient = options.modelClient ?? new HttpAgentModelClient();
