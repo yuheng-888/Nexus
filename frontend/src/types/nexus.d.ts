@@ -6,6 +6,7 @@ import type { InstallResult, Plugin, PluginSearchRequest, Skill, SkillsSearchReq
 import type { McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest } from "./mcp";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "./rag";
 import type { ReverseApi } from "./reverse";
+import type { ScriptApi } from "./script";
 import type { ShellApi } from "./shell";
 import type { TestApi } from "./test";
 import type { WorkflowApi } from "./workflow";
@@ -18,6 +19,7 @@ export type * from "./marketplace";
 export type * from "./mcp";
 export type * from "./rag";
 export type * from "./reverse";
+export type * from "./script";
 export type * from "./shell";
 export type * from "./test";
 export type * from "./workflow";
@@ -245,6 +247,7 @@ interface NexusApi {
     apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>;
     preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>;
   };
+  scripts: ScriptApi;
   session: {
     kill(sessionId: string): Promise<void>;
     onData(handler: (event: { data: string; sessionId: string }) => void): () => void;

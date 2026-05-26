@@ -145,6 +145,10 @@ const nexusApi = {
     apply: (request) => ipcRenderer.invoke("nexus:search:replaceApply", request),
     preview: (request) => ipcRenderer.invoke("nexus:search:replacePreview", request)
   },
+  scripts: {
+    discover: () => ipcRenderer.invoke("nexus:scripts:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:scripts:run", request)
+  },
   shell: {
     revealPath: (path) => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },

@@ -5,6 +5,7 @@ import type { NexusGitApi } from "../gitContracts.js";
 import type { LanguageCompletionList, LanguageDiagnostic, LanguageDocumentInput, LanguageDocumentSymbol, LanguageHover, LanguageLocation, LanguagePathRequest, LanguagePositionRequest } from "../languageContracts.js";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "../ragContracts.js";
 import type { ReverseAnalysisRequest, ReverseAnalysisResult, ReverseAsarDiffRequest, ReverseAsarDiffResult, ReverseAsarExtractRequest, ReverseAsarExtractResult, ReverseAsarInspectRequest, ReverseAsarInspectResult, ReverseAsarPackRequest, ReverseAsarPackResult, ReverseJsHookGenerateRequest, ReverseJsHookGenerateResult, ReverseJsHookInjectRequest, ReverseJsHookInjectResult, ReverseJsHookRestoreRequest, ReverseJsHookRestoreResult, ReverseProject, ReverseProjectDraft, ReverseTargetDetection } from "../reverseContracts.js";
+import type { NexusScriptApi } from "../scriptContracts.js";
 import type { ShellRevealResult } from "../shellContracts.js";
 import type { NexusTestApi } from "../testContracts.js";
 import type { WorkflowDefinition, WorkflowDefinitionDraft, WorkflowRun, WorkflowRunRequest } from "../workflowContracts.js";
@@ -197,6 +198,10 @@ const nexusApi = {
     apply: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replaceApply", request),
     preview: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replacePreview", request)
   },
+  scripts: {
+    discover: () => ipcRenderer.invoke("nexus:scripts:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:scripts:run", request)
+  } satisfies NexusScriptApi,
   shell: {
     revealPath: (path: string): Promise<ShellRevealResult> => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },

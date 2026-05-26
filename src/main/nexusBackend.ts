@@ -19,6 +19,7 @@ import { RagService } from "./ragService.js";
 import { ReverseService } from "./reverseService.js";
 import { SearchService } from "./searchService.js";
 import type { SessionManager } from "./sessionManager.js";
+import { ScriptService } from "./scriptService.js";
 import { SubagentService } from "./subagentService.js";
 import { TestService } from "./testService.js";
 import { WorkflowService } from "./workflowService.js";
@@ -47,6 +48,7 @@ export class NexusBackend {
   readonly gitHubPr: GitHubPrService;
   readonly gitPublish: GitPublishService;
   readonly search: SearchService;
+  readonly scripts: ScriptService;
   readonly languages: LanguageService;
   readonly marketplace: MarketplaceService;
   readonly mcp: McpService;
@@ -68,6 +70,7 @@ export class NexusBackend {
     this.workspaceState = options.workspaceState ?? new WorkspaceStateStore();
     this.files = new FileService({ workspaceRoot: config.root });
     this.search = new SearchService({ workspaceRoot: config.root });
+    this.scripts = new ScriptService({ workspaceRoot: config.root });
     this.languages = new LanguageService({ workspaceRoot: config.root });
     this.git = new GitService({ workspaceRoot: config.root });
     this.gitHubPr = new GitHubPrService({ git: this.git, workspaceRoot: config.root });
@@ -124,6 +127,7 @@ export class NexusBackend {
     this.config = { ...this.config, root: workspaceRoot };
     this.files.setWorkspaceRoot(workspaceRoot);
     this.search.setWorkspaceRoot(workspaceRoot);
+    this.scripts.setWorkspaceRoot(workspaceRoot);
     this.languages.setWorkspaceRoot(workspaceRoot);
     this.git.setWorkspaceRoot(workspaceRoot);
     this.gitHubPr.setWorkspaceRoot(workspaceRoot);

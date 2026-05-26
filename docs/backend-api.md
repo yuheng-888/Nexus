@@ -84,6 +84,17 @@ The first test explorer backend supports npm projects with a `package.json`
 executes `npm test -- <path>` and returns stdout, stderr, exit code, duration,
 and pass/fail status.
 
+## Project Scripts
+
+```ts
+window.nexus.scripts.discover(): Promise<ScriptDiscoveryResult>
+window.nexus.scripts.run(request: ScriptRunRequest): Promise<ScriptRunResult>
+```
+
+Discovers npm scripts from the opened workspace `package.json`. `run` executes
+the selected script as `npm run <name>` without shell string interpolation, then
+returns stdout, stderr, exit code, duration, and pass/fail status.
+
 ## Local RAG / Code Index
 
 ```ts

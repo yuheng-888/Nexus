@@ -4,6 +4,7 @@ import type { NexusGitApi } from "../gitContracts.js";
 import type { NexusLanguageApi } from "../languageContracts.js";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "../ragContracts.js";
 import type { NexusReverseApi } from "../reverseContracts.js";
+import type { NexusScriptApi } from "../scriptContracts.js";
 import type { NexusShellApi } from "../shellContracts.js";
 import type { NexusTestApi } from "../testContracts.js";
 import type { NexusWorkflowApi } from "../workflowContracts.js";
@@ -72,6 +73,7 @@ interface NexusApi {
     apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>;
     preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>;
   };
+  scripts: NexusScriptApi;
   shell: NexusShellApi;
   session: {
     kill(sessionId: string): Promise<void>;
