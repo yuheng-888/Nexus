@@ -4,6 +4,8 @@ import { FileExplorer } from "./FileExplorer";
 import { SearchPanel } from "./SearchPanel";
 import { OutlinePanel } from "./OutlinePanel";
 import { GitPanel } from "./GitPanel";
+import { ScriptsPanel } from "./ScriptsPanel";
+import { TestsPanel } from "./TestsPanel";
 import { RagPanel } from "./RagPanel";
 import { WorkflowPanel } from "./WorkflowPanel";
 import { McpPanel } from "./McpPanel";
@@ -19,6 +21,8 @@ export function SidebarContent() {
     search: "搜索",
     outline: "符号大纲",
     git: "版本控制",
+    tests: "测试",
+    scripts: "脚本",
     rag: "代码库索引",
     workflows: "工作流",
     mcp: "MCP 服务",
@@ -54,6 +58,8 @@ export function SidebarContent() {
         {activeSidebar === "search" && <SearchPanel />}
         {activeSidebar === "outline" && <OutlinePanel />}
         {activeSidebar === "git" && <GitPanel />}
+        {activeSidebar === "tests" && <TestsPanel />}
+        {activeSidebar === "scripts" && <ScriptsPanel />}
         {activeSidebar === "rag" && <RagPanel />}
         {activeSidebar === "workflows" && <WorkflowPanel />}
         {activeSidebar === "mcp" && <McpPanel />}

@@ -37,6 +37,7 @@ export interface RuntimeSessionController {
   readonly signal: AbortSignal;
   emitData(data: string): void;
   exit(exitCode: number): void;
+  onInput(handler: (data: string) => void): void;
 }
 
 export type RuntimeSessionRunner = (controller: RuntimeSessionController) => Promise<void>;
@@ -130,6 +131,7 @@ class RuntimeSessionProcess implements PtyProcess, RuntimeSessionController {
   private dataHandler: (data: string) => void = () => {};
   private exited = false;
   private exitHandler: (exit: PtyExit) => void = () => {};
+  private inputHandler: (data: string) => void = () => {};
 
   constructor(runner: RuntimeSessionRunner) {
     this.runner = runner;
@@ -158,6 +160,10 @@ class RuntimeSessionProcess implements PtyProcess, RuntimeSessionController {
     this.exitHandler({ exitCode });
   }
 
+  onInput(handler: (data: string) => void): void {
+    this.inputHandler = handler;
+  }
+
   kill(): void {
     this.abortController.abort();
     this.exit(ABORT_EXIT_CODE);
@@ -175,8 +181,10 @@ class RuntimeSessionProcess implements PtyProcess, RuntimeSessionController {
     throw new Error("Native runtime sessions do not support terminal resize");
   }
 
-  write(): void {
-    throw new Error("Native runtime sessions do not accept stdin");
+  write(data: string): void {
+    if (!this.exited) {
+      this.inputHandler(data);
+    }
   }
 
   private async run(): Promise<void> {

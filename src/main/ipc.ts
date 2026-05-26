@@ -1,5 +1,13 @@
 import { dialog, ipcMain, type WebContents } from "electron";
-import type { AgentStartOptions, McpSearchRequest, McpServerAddRequest, SearchRequest, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
+import type {
+  AgentStartOptions,
+  McpSearchRequest,
+  McpServerAddRequest,
+  SearchReplaceRequest,
+  SearchRequest,
+  SubagentStartOptions,
+  TerminalCreateOptions
+} from "../contracts.js";
 import type { LanguageDocumentInput, LanguagePathRequest, LanguagePositionRequest } from "../languageContracts.js";
 import type { RagSearchRequest } from "../ragContracts.js";
 import type {
@@ -14,6 +22,8 @@ import type {
   ReverseProjectDraft
 } from "../reverseContracts.js";
 import type { WorkflowDefinitionDraft, WorkflowRunRequest } from "../workflowContracts.js";
+import type { TestRunRequest } from "../testContracts.js";
+import type { ScriptRunRequest as ProjectScriptRunRequest } from "../scriptContracts.js";
 import { registerDialogHandlers } from "./dialogIpc.js";
 import { registerGitHandlers } from "./gitIpc.js";
 import { registerMarketplaceHandlers } from "./marketplaceIpc.js";
@@ -29,6 +39,8 @@ export function registerIpcHandlers(backend: NexusBackend): void {
   registerFileHandlers(backend);
   registerLanguageHandlers(backend);
   registerSearchHandlers(backend);
+  registerScriptHandlers(backend);
+  registerTestHandlers(backend);
   registerGitHandlers(backend);
   registerSessionHandlers(backend);
   registerConversationHandlers(backend);
@@ -110,6 +122,22 @@ function registerLanguageHandlers(backend: NexusBackend): void {
 
 function registerSearchHandlers(backend: NexusBackend): void {
   ipcMain.handle("nexus:search", (_event, request: SearchRequest) => backend.search.search(request));
+  ipcMain.handle("nexus:search:replaceApply", (_event, request: SearchReplaceRequest) => {
+    return backend.search.applyReplace(request);
+  });
+  ipcMain.handle("nexus:search:replacePreview", (_event, request: SearchReplaceRequest) => {
+    return backend.search.previewReplace(request);
+  });
+}
+
+function registerTestHandlers(backend: NexusBackend): void {
+  ipcMain.handle("nexus:tests:discover", () => backend.tests.discover());
+  ipcMain.handle("nexus:tests:run", (_event, request: TestRunRequest) => backend.tests.run(request));
+}
+
+function registerScriptHandlers(backend: NexusBackend): void {
+  ipcMain.handle("nexus:scripts:discover", () => backend.scripts.discover());
+  ipcMain.handle("nexus:scripts:run", (_event, request: ProjectScriptRunRequest) => backend.scripts.run(request));
 }
 
 function registerSessionHandlers(backend: NexusBackend): void {

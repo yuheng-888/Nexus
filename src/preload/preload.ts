@@ -1,11 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AgentStartOptions, Plugin, Skill, InstallResult, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest, PluginSearchRequest, SearchRequest, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
+import type { AgentStartOptions, Plugin, Skill, InstallResult, ApiConfig, ApiProviderPreset, ApiTestResult, Conversation, ConversationSummary, McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest, PluginSearchRequest, SearchReplaceRequest, SearchRequest, SkillsSearchRequest, SubagentProfile, SubagentRun, SubagentStartOptions, TerminalCreateOptions } from "../contracts.js";
 import type { DialogPathPickRequest, DialogPathPickResult } from "../dialogContracts.js";
 import type { NexusGitApi } from "../gitContracts.js";
 import type { LanguageCompletionList, LanguageDiagnostic, LanguageDocumentInput, LanguageDocumentSymbol, LanguageHover, LanguageLocation, LanguagePathRequest, LanguagePositionRequest } from "../languageContracts.js";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "../ragContracts.js";
 import type { ReverseAnalysisRequest, ReverseAnalysisResult, ReverseAsarDiffRequest, ReverseAsarDiffResult, ReverseAsarExtractRequest, ReverseAsarExtractResult, ReverseAsarInspectRequest, ReverseAsarInspectResult, ReverseAsarPackRequest, ReverseAsarPackResult, ReverseJsHookGenerateRequest, ReverseJsHookGenerateResult, ReverseJsHookInjectRequest, ReverseJsHookInjectResult, ReverseJsHookRestoreRequest, ReverseJsHookRestoreResult, ReverseProject, ReverseProjectDraft, ReverseTargetDetection } from "../reverseContracts.js";
+import type { NexusScriptApi } from "../scriptContracts.js";
 import type { ShellRevealResult } from "../shellContracts.js";
+import type { NexusTestApi } from "../testContracts.js";
 import type { WorkflowDefinition, WorkflowDefinitionDraft, WorkflowRun, WorkflowRunRequest } from "../workflowContracts.js";
 
 const gitApi: NexusGitApi = {
@@ -30,6 +32,9 @@ const gitApi: NexusGitApi = {
   pull: (request) => ipcRenderer.invoke("nexus:git:pull", request),
   publishSafetyScan: () => ipcRenderer.invoke("nexus:git:publishSafetyScan"),
   publishToGitHub: (request) => ipcRenderer.invoke("nexus:git:publishToGitHub", request),
+  createPullRequest: (request) => ipcRenderer.invoke("nexus:git:createPullRequest", request),
+  listPullRequestReviews: (request) => ipcRenderer.invoke("nexus:git:listPullRequestReviews", request),
+  listPullRequests: (request) => ipcRenderer.invoke("nexus:git:listPullRequests", request),
   push: (request) => ipcRenderer.invoke("nexus:git:push", request),
   rebase: (branch) => ipcRenderer.invoke("nexus:git:rebase", branch),
   removeRemote: (name) => ipcRenderer.invoke("nexus:git:removeRemote", name),
@@ -189,6 +194,14 @@ const nexusApi = {
     }
   },
   search: (request: SearchRequest) => ipcRenderer.invoke("nexus:search", request),
+  searchReplace: {
+    apply: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replaceApply", request),
+    preview: (request: SearchReplaceRequest) => ipcRenderer.invoke("nexus:search:replacePreview", request)
+  },
+  scripts: {
+    discover: () => ipcRenderer.invoke("nexus:scripts:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:scripts:run", request)
+  } satisfies NexusScriptApi,
   shell: {
     revealPath: (path: string): Promise<ShellRevealResult> => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },
@@ -210,6 +223,10 @@ const nexusApi = {
     profiles: (): Promise<readonly SubagentProfile[]> => ipcRenderer.invoke("nexus:subagents:profiles"),
     start: (options: SubagentStartOptions): Promise<SubagentRun> => ipcRenderer.invoke("nexus:subagents:start", options)
   },
+  tests: {
+    discover: () => ipcRenderer.invoke("nexus:tests:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:tests:run", request)
+  } satisfies NexusTestApi,
   workflows: {
     delete: (id: string): Promise<boolean> => ipcRenderer.invoke("nexus:workflows:delete", id),
     get: (id: string): Promise<WorkflowDefinition> => ipcRenderer.invoke("nexus:workflows:get", id),

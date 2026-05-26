@@ -58,10 +58,42 @@ hooks, injected backups, extracted folders, and packed ASAR files.
 
 ```ts
 window.nexus.search(request: SearchRequest): Promise<SearchMatch[]>
+window.nexus.searchReplace.preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>
+window.nexus.searchReplace.apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>
 ```
 
 Uses `rg --json` and returns compact match records with path, line, and preview.
 An empty query returns `[]`; a ripgrep execution failure throws the real error.
+
+Search replace uses literal matching. `preview` returns per-file match counts and
+line previews without writing files. `apply` recomputes matches against the
+current workspace files, writes the replacements, and returns changed-file and
+replacement counts.
+
+## Tests
+
+```ts
+window.nexus.tests.discover(): Promise<TestDiscoveryResult>
+window.nexus.tests.run(request: TestRunRequest): Promise<TestRunResult>
+```
+
+The first test explorer backend supports npm projects with a `package.json`
+`test` script. Discovery uses ripgrep file listing for common `.test` and
+`.spec` JavaScript/TypeScript files while skipping generated/vendor folders.
+`run({ scope: "all" })` executes `npm test`; `run({ scope: "file", path })`
+executes `npm test -- <path>` and returns stdout, stderr, exit code, duration,
+and pass/fail status.
+
+## Project Scripts
+
+```ts
+window.nexus.scripts.discover(): Promise<ScriptDiscoveryResult>
+window.nexus.scripts.run(request: ScriptRunRequest): Promise<ScriptRunResult>
+```
+
+Discovers npm scripts from the opened workspace `package.json`. `run` executes
+the selected script as `npm run <name>` without shell string interpolation, then
+returns stdout, stderr, exit code, duration, and pass/fail status.
 
 ## Local RAG / Code Index
 
@@ -105,6 +137,9 @@ git.fetch(request?) / git.pull(request?) / git.push(request?): Promise<GitComman
 git.init(request?): Promise<GitCommandResult>
 git.publishSafetyScan(): Promise<GitPublishSafetyReport>
 git.publishToGitHub(request): Promise<GitHubPublishResult>
+git.createPullRequest(request): Promise<GitHubPullRequest>
+git.listPullRequests(request): Promise<GitHubPullRequest[]>
+git.listPullRequestReviews(request): Promise<GitHubPullRequestReview[]>
 git.createBranch(request) / git.checkoutBranch(request) / git.deleteBranch(request): Promise<GitCommandResult>
 git.log(request?): Promise<GitLogResult>
 git.show(ref) / git.merge(branch) / git.rebase(branch): Promise<GitCommandResult>
@@ -139,6 +174,11 @@ initializes Git when needed, stages and commits changed files, creates a GitHub
 repository through the GitHub REST API, upserts the requested remote, and pushes
 the requested branch with upstream tracking. The GitHub token is supplied per
 request and is not persisted by Nexus.
+
+GitHub PR APIs infer `owner/repo` from the configured remote when those fields
+are omitted. `createPullRequest` defaults `base` to `main` and `head` to the
+current branch, then calls the GitHub REST API directly. `listPullRequests` and
+`listPullRequestReviews` expose review state for native UI and AI workflows.
 
 ## API Configuration
 
@@ -183,6 +223,106 @@ window.nexus.agent.start(options: AgentStartOptions): Promise<SessionSnapshot>
 Starts a Nexus-native agent runtime session. The runtime uses the active model
 configuration from `window.nexus.api`, executes Nexus backend tools for project
 context, and streams JSON session events through the shared session event API.
+During a run, the model can request additional read-only native tools by
+emitting `nexus.tool_call` JSON objects. Nexus executes those calls, streams
+`agent.tool.requested` and `agent.tool.completed` audit events, sends
+`nexus.tool_result` messages back to the model, and only persists the final
+assistant response. If a model keeps requesting tools after the runtime limit,
+the session fails with an explicit tool-loop error instead of silently falling
+back.
+Tools marked as `write` require explicit renderer approval. Nexus emits
+`agent.tool.approval_requested` with a preview, waits for
+`window.nexus.session.write()` to send an `agent.tool.approval` decision, then
+emits `agent.tool.approval_resolved` before executing or denying the tool.
+
+Available interactive tools are:
+
+- `workspace.list_directory`
+- `workspace.read_file`
+- `workspace.search`
+- `workspace.replace_preview`
+- `workspace.replace_all` (approval required)
+- `workspace.write_file` (approval required)
+- `git.status`
+- `git.summary`
+- `git.branches`
+- `git.list_branches`
+- `git.diff`
+- `git.remotes`
+- `git.log`
+- `git.show`
+- `git.stash_list`
+- `git.tag_list`
+- `git.init` (approval required)
+- `git.stage` (approval required)
+- `git.unstage` (approval required)
+- `git.stage_all` (approval required)
+- `git.unstage_all` (approval required)
+- `git.commit` (approval required)
+- `git.create_branch` (approval required)
+- `git.checkout_branch` (approval required)
+- `git.delete_branch` (approval required)
+- `git.add_remote` (approval required)
+- `git.remove_remote` (approval required)
+- `git.fetch` (approval required)
+- `git.pull` (approval required)
+- `git.push` (approval required)
+- `git.merge` (approval required)
+- `git.rebase` (approval required)
+- `git.abort_merge` (approval required)
+- `git.abort_rebase` (approval required)
+- `git.stash_push` (approval required)
+- `git.stash_apply` (approval required)
+- `git.stash_pop` (approval required)
+- `git.stash_drop` (approval required)
+- `git.discard_file` (approval required)
+- `git.discard_all` (approval required)
+- `git.create_tag` (approval required)
+- `git.delete_tag` (approval required)
+- `github.publish_safety_scan`
+- `github.publish_repository` (approval required)
+- `languages.diagnostics`
+- `languages.document_symbols`
+- `languages.definition`
+- `languages.references`
+- `languages.hover`
+- `marketplace.plugins.search`
+- `marketplace.plugins.installed`
+- `marketplace.plugins.install` (approval required)
+- `marketplace.plugins.uninstall` (approval required)
+- `marketplace.plugins.toggle` (approval required)
+- `marketplace.skills.search`
+- `marketplace.skills.installed`
+- `marketplace.skills.install` (approval required)
+- `marketplace.skills.uninstall` (approval required)
+- `marketplace.skills.toggle` (approval required)
+- `mcp.list_tools`
+- `mcp.call_tool` (approval required)
+- `mcp.marketplace.search`
+- `mcp.marketplace.install` (approval required)
+- `rag.index_status`
+- `rag.search`
+- `rag.retrieve_context`
+- `rag.build_index` (approval required)
+- `rag.clear_index` (approval required)
+- `reverse.detect_target`
+- `reverse.scan_javascript`
+- `reverse.asar.inspect`
+- `reverse.asar.diff`
+- `reverse.asar.extract` (approval required)
+- `reverse.asar.pack` (approval required)
+- `reverse.jshook.generate` (approval required)
+- `reverse.jshook.inject` (approval required)
+- `reverse.jshook.restore` (approval required)
+- `reverse.projects.list`
+- `reverse.projects.add` (approval required)
+- `reverse.projects.remove` (approval required)
+- `scripts.discover`
+- `scripts.run` (approval required)
+- `tests.discover`
+- `tests.run` (approval required)
+- `workflows.list`
+- `workflows.run` (approval required)
 
 Start the main assistant:
 

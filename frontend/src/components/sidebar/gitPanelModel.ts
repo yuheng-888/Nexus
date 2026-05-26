@@ -1,4 +1,4 @@
-import type { GitBranchItem, GitCommandResult, GitFileChange, GitHubPublishResult, GitLogEntry, GitRemote } from "../../types/git";
+import type { GitBranchItem, GitCommandResult, GitFileChange, GitHubPublishResult, GitHubPullRequest, GitLogEntry, GitRemote } from "../../types/git";
 
 interface GitEmptyStateInput {
   readonly repository: boolean;
@@ -39,6 +39,15 @@ export function formatGitHubPublishResult(result: GitHubPublishResult): string {
     `分支: ${result.branch}`,
     `提交: ${commit}`,
     "推送完成"
+  ].join("\n");
+}
+
+export function formatGitHubPullRequestResult(result: GitHubPullRequest): string {
+  return [
+    `PR #${result.number}: ${result.title}`,
+    `分支: ${result.headRef} -> ${result.baseRef}`,
+    `作者: ${result.authorLogin}`,
+    `链接: ${result.htmlUrl}`
   ].join("\n");
 }
 

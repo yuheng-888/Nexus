@@ -111,6 +111,12 @@ describe("preload runtime contract", () => {
     expect(((api.reverse as { jshook?: Record<string, unknown> }).jshook)?.inject).toEqual(expect.any(Function));
     expect(((api.reverse as { jshook?: Record<string, unknown> }).jshook)?.restore).toEqual(expect.any(Function));
     expect((api.shell as { revealPath?: unknown }).revealPath).toEqual(expect.any(Function));
+    expect(((api.searchReplace as { apply?: unknown; preview?: unknown })?.apply)).toEqual(expect.any(Function));
+    expect(((api.searchReplace as { apply?: unknown; preview?: unknown })?.preview)).toEqual(expect.any(Function));
+    expect(((api.scripts as { discover?: unknown; run?: unknown })?.discover)).toEqual(expect.any(Function));
+    expect(((api.scripts as { discover?: unknown; run?: unknown })?.run)).toEqual(expect.any(Function));
+    expect(((api.tests as { discover?: unknown; run?: unknown })?.discover)).toEqual(expect.any(Function));
+    expect(((api.tests as { discover?: unknown; run?: unknown })?.run)).toEqual(expect.any(Function));
   });
 });
 

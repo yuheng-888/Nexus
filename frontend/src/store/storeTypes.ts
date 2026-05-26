@@ -16,7 +16,7 @@ export interface EditorTab {
   readonly path: string;
 }
 
-export type SidebarPanel = "files" | "search" | "outline" | "git" | "rag" | "workflows" | "mcp" | "plugins" | "skills" | "settings" | null;
+export type SidebarPanel = "files" | "search" | "outline" | "git" | "tests" | "scripts" | "rag" | "workflows" | "mcp" | "plugins" | "skills" | "settings" | null;
 export type BottomPanel = "terminal" | "ai" | "problems" | null;
 
 export interface McpServer {

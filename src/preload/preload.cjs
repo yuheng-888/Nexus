@@ -141,6 +141,14 @@ const nexusApi = {
     }
   },
   search: (request) => ipcRenderer.invoke("nexus:search", request),
+  searchReplace: {
+    apply: (request) => ipcRenderer.invoke("nexus:search:replaceApply", request),
+    preview: (request) => ipcRenderer.invoke("nexus:search:replacePreview", request)
+  },
+  scripts: {
+    discover: () => ipcRenderer.invoke("nexus:scripts:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:scripts:run", request)
+  },
   shell: {
     revealPath: (path) => ipcRenderer.invoke("nexus:shell:revealPath", path)
   },
@@ -157,6 +165,10 @@ const nexusApi = {
     list: () => ipcRenderer.invoke("nexus:subagents:list"),
     profiles: () => ipcRenderer.invoke("nexus:subagents:profiles"),
     start: (options) => ipcRenderer.invoke("nexus:subagents:start", options)
+  },
+  tests: {
+    discover: () => ipcRenderer.invoke("nexus:tests:discover"),
+    run: (request) => ipcRenderer.invoke("nexus:tests:run", request)
   },
   workflows: {
     delete: (id) => ipcRenderer.invoke("nexus:workflows:delete", id),

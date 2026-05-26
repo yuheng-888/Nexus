@@ -96,6 +96,8 @@ function sidebarCommands(setActiveSidebar: (panel: SidebarPanel) => void): reado
     sidebarCommand({ category: "视图", id: "sidebar.files", keywords: ["explorer"], panel: "files", setActiveSidebar, title: "显示文件管理器" }),
     sidebarCommand({ category: "视图", id: "sidebar.search", keywords: ["find"], panel: "search", setActiveSidebar, title: "显示搜索" }),
     sidebarCommand({ category: "Git", id: "sidebar.git", keywords: ["source control"], panel: "git", setActiveSidebar, title: "显示版本控制" }),
+    sidebarCommand({ category: "测试", id: "sidebar.tests", keywords: ["test", "vitest", "npm"], panel: "tests", setActiveSidebar, title: "显示测试" }),
+    sidebarCommand({ category: "任务", id: "sidebar.scripts", keywords: ["script", "npm", "task"], panel: "scripts", setActiveSidebar, title: "显示脚本" }),
     sidebarCommand({ category: "AI", id: "sidebar.rag", keywords: ["rag", "index", "代码库"], panel: "rag", setActiveSidebar, title: "显示代码库索引" }),
     sidebarCommand({ category: "工作流", id: "sidebar.workflows", keywords: ["macro", "automation"], panel: "workflows", setActiveSidebar, title: "显示工作流" }),
     sidebarCommand({ category: "MCP", id: "sidebar.mcp", keywords: ["server"], panel: "mcp", setActiveSidebar, title: "显示 MCP 服务" }),

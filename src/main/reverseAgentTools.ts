@@ -1,11 +1,37 @@
 import type {
   ReverseAnalysisRequest,
   ReverseAnalysisResult,
+  ReverseAsarDiffRequest,
+  ReverseAsarDiffResult,
+  ReverseAsarExtractRequest,
+  ReverseAsarExtractResult,
+  ReverseAsarInspectRequest,
+  ReverseAsarInspectResult,
+  ReverseAsarPackRequest,
+  ReverseAsarPackResult,
+  ReverseJsHookGenerateRequest,
+  ReverseJsHookGenerateResult,
+  ReverseJsHookInjectRequest,
+  ReverseJsHookInjectResult,
+  ReverseJsHookRestoreRequest,
+  ReverseJsHookRestoreResult,
+  ReverseProject,
+  ReverseProjectDraft,
   ReverseTargetDetection
 } from "../reverseContracts.js";
 
 export interface ReverseContextProvider {
+  addProject(draft: ReverseProjectDraft): Promise<ReverseProject>;
   detectTarget(path: string): Promise<ReverseTargetDetection>;
+  diffAsar(request: ReverseAsarDiffRequest): Promise<ReverseAsarDiffResult>;
+  extractAsar(request: ReverseAsarExtractRequest): Promise<ReverseAsarExtractResult>;
+  generateJavaScriptHook(request: ReverseJsHookGenerateRequest): Promise<ReverseJsHookGenerateResult>;
+  injectJavaScriptHook(request: ReverseJsHookInjectRequest): Promise<ReverseJsHookInjectResult>;
+  inspectAsar(request: ReverseAsarInspectRequest): Promise<ReverseAsarInspectResult>;
+  listProjects(): Promise<readonly ReverseProject[]>;
+  packAsar(request: ReverseAsarPackRequest): Promise<ReverseAsarPackResult>;
+  removeProject(id: string): Promise<boolean>;
+  restoreJavaScriptHook(request: ReverseJsHookRestoreRequest): Promise<ReverseJsHookRestoreResult>;
   scanJavaScript(request: ReverseAnalysisRequest): Promise<ReverseAnalysisResult>;
 }
 

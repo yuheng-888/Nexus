@@ -1,6 +1,14 @@
 import { spawn } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import type { SearchMatch, SearchRequest } from "../contracts.js";
+import type {
+  SearchMatch,
+  SearchReplaceApplyResult,
+  SearchReplaceFilePreview,
+  SearchReplacePreviewResult,
+  SearchReplaceRequest,
+  SearchRequest
+} from "../contracts.js";
 import { resolveWorkspacePath, toWorkspaceRelativePath } from "./pathGuards.js";
 
 export interface SearchServiceOptions {
@@ -12,6 +20,8 @@ interface ProcessResult {
   readonly stderr: string;
   readonly stdout: string;
 }
+
+const MAX_PREVIEW_LINES_PER_FILE = 20;
 
 export class SearchService {
   private workspaceRoot: string | null;
@@ -42,6 +52,38 @@ export class SearchService {
     assertSuccessfulSearch(result);
     return parseRipgrepJson(result.stdout, workspaceRoot, cwd);
   }
+
+  async previewReplace(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult> {
+    const input = normalizeReplaceRequest(request, this.workspaceRoot);
+    const files = await this.resolveReplaceFiles(input);
+    const previews = await Promise.all(files.map((path) => previewReplaceFile(path, input)));
+    return summarizePreview(previews.filter((file) => file.matches > 0));
+  }
+
+  async applyReplace(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult> {
+    const input = normalizeReplaceRequest(request, this.workspaceRoot);
+    const files = await this.resolveReplaceFiles(input);
+    const changed = await Promise.all(files.map((path) => applyReplaceFile(path, input)));
+    return summarizeApply(changed.filter((file) => file.matches > 0));
+  }
+
+  private async resolveReplaceFiles(input: ReplaceInput): Promise<readonly string[]> {
+    if (input.paths !== undefined) return input.paths.map((path) => resolveWorkspacePath(input.workspaceRoot, path));
+    return findLiteralMatchFiles(input);
+  }
+}
+
+interface ReplaceInput {
+  readonly cwd: string;
+  readonly paths?: readonly string[];
+  readonly query: string;
+  readonly replacement: string;
+  readonly workspaceRoot: string;
+}
+
+interface ReplaceApplyFileResult {
+  readonly matches: number;
+  readonly path: string;
 }
 
 function requireWorkspaceRoot(workspaceRoot: string | null): string {
@@ -56,6 +98,96 @@ function assertSuccessfulSearch(result: ProcessResult): void {
   if (result.exitCode !== 0) {
     throw new Error(`ripgrep failed with exit code ${result.exitCode}: ${result.stderr}`);
   }
+}
+
+function normalizeReplaceRequest(request: SearchReplaceRequest, root: string | null): ReplaceInput {
+  const query = readString(request.query, "Search query is required for replace").trim();
+  if (query === "") throw new Error("Search query is required for replace");
+  const workspaceRoot = requireWorkspaceRoot(root);
+  return {
+    cwd: resolveWorkspacePath(workspaceRoot, request.cwd ?? "."),
+    paths: readOptionalPaths(request.paths),
+    query,
+    replacement: readString(request.replacement, "Replacement text is required"),
+    workspaceRoot
+  };
+}
+
+async function findLiteralMatchFiles(input: ReplaceInput): Promise<readonly string[]> {
+  const result = await runProcess("rg", ["--files-with-matches", "--fixed-strings", "--", input.query, input.cwd], input.workspaceRoot);
+  if (result.exitCode === 1) return [];
+  assertSuccessfulSearch(result);
+  return result.stdout.split(/\r?\n/).filter(Boolean).map((path) => resolve(input.workspaceRoot, path));
+}
+
+async function previewReplaceFile(path: string, input: ReplaceInput): Promise<SearchReplaceFilePreview> {
+  const content = await readFile(path, "utf8");
+  const relativePath = toWorkspaceRelativePath(input.workspaceRoot, path);
+  return {
+    matches: countLiteralOccurrences(content, input.query),
+    path: relativePath,
+    previews: previewReplaceLines(content, input)
+  };
+}
+
+async function applyReplaceFile(path: string, input: ReplaceInput): Promise<ReplaceApplyFileResult> {
+  const content = await readFile(path, "utf8");
+  const matches = countLiteralOccurrences(content, input.query);
+  if (matches > 0) await writeFile(path, replaceLiteral(content, input.query, input.replacement), "utf8");
+  return { matches, path: toWorkspaceRelativePath(input.workspaceRoot, path) };
+}
+
+function previewReplaceLines(content: string, input: ReplaceInput): SearchReplaceFilePreview["previews"] {
+  return content.split(/\r?\n/).flatMap((line, index) => {
+    if (!line.includes(input.query)) return [];
+    return [{
+      after: replaceLiteral(line, input.query, input.replacement),
+      before: line,
+      line: index + 1
+    }];
+  }).slice(0, MAX_PREVIEW_LINES_PER_FILE);
+}
+
+function summarizePreview(files: readonly SearchReplaceFilePreview[]): SearchReplacePreviewResult {
+  return {
+    files,
+    totalMatches: files.reduce((total, file) => total + file.matches, 0)
+  };
+}
+
+function summarizeApply(files: readonly ReplaceApplyFileResult[]): SearchReplaceApplyResult {
+  return {
+    filesChanged: files.length,
+    paths: files.map((file) => file.path),
+    totalMatches: files.reduce((total, file) => total + file.matches, 0)
+  };
+}
+
+function countLiteralOccurrences(value: string, query: string): number {
+  let count = 0;
+  let index = value.indexOf(query);
+  while (index !== -1) {
+    count += 1;
+    index = value.indexOf(query, index + query.length);
+  }
+  return count;
+}
+
+function replaceLiteral(value: string, query: string, replacement: string): string {
+  return value.split(query).join(replacement);
+}
+
+function readString(value: unknown, message: string): string {
+  if (typeof value !== "string") throw new Error(message);
+  return value;
+}
+
+function readOptionalPaths(value: unknown): readonly string[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error("Replace paths must be strings");
+  }
+  return value;
 }
 
 function parseRipgrepJson(stdout: string, workspaceRoot: string, cwd: string): readonly SearchMatch[] {

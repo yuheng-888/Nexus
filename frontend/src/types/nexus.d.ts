@@ -6,7 +6,9 @@ import type { InstallResult, Plugin, PluginSearchRequest, Skill, SkillsSearchReq
 import type { McpMarketplaceServer, McpSearchRequest, McpServer, McpServerAddRequest } from "./mcp";
 import type { RagContextBundle, RagIndexStatus, RagIndexSummary, RagSearchRequest, RagSearchResult } from "./rag";
 import type { ReverseApi } from "./reverse";
+import type { ScriptApi } from "./script";
 import type { ShellApi } from "./shell";
+import type { TestApi } from "./test";
 import type { WorkflowApi } from "./workflow";
 
 export type * from "./conversation";
@@ -17,7 +19,9 @@ export type * from "./marketplace";
 export type * from "./mcp";
 export type * from "./rag";
 export type * from "./reverse";
+export type * from "./script";
 export type * from "./shell";
+export type * from "./test";
 export type * from "./workflow";
 
 export interface DirectoryEntry {
@@ -38,6 +42,36 @@ export interface SearchMatch {
   readonly line: number;
   readonly path: string;
   readonly preview: string;
+}
+
+export interface SearchReplaceRequest {
+  readonly cwd?: string;
+  readonly paths?: readonly string[];
+  readonly query: string;
+  readonly replacement: string;
+}
+
+export interface SearchReplaceLinePreview {
+  readonly after: string;
+  readonly before: string;
+  readonly line: number;
+}
+
+export interface SearchReplaceFilePreview {
+  readonly matches: number;
+  readonly path: string;
+  readonly previews: readonly SearchReplaceLinePreview[];
+}
+
+export interface SearchReplacePreviewResult {
+  readonly files: readonly SearchReplaceFilePreview[];
+  readonly totalMatches: number;
+}
+
+export interface SearchReplaceApplyResult {
+  readonly filesChanged: number;
+  readonly paths: readonly string[];
+  readonly totalMatches: number;
 }
 
 export interface SessionSnapshot {
@@ -209,6 +243,11 @@ interface NexusApi {
     toggle(name: string): Promise<InstallResult>;
   };
   search(request: SearchRequest): Promise<SearchMatch[]>;
+  searchReplace: {
+    apply(request: SearchReplaceRequest): Promise<SearchReplaceApplyResult>;
+    preview(request: SearchReplaceRequest): Promise<SearchReplacePreviewResult>;
+  };
+  scripts: ScriptApi;
   session: {
     kill(sessionId: string): Promise<void>;
     onData(handler: (event: { data: string; sessionId: string }) => void): () => void;
@@ -225,6 +264,7 @@ interface NexusApi {
   terminal: {
     create(options: TerminalCreateOptions): Promise<SessionSnapshot>;
   };
+  tests: TestApi;
   workspace: {
     get(): Promise<WorkspaceInfo>;
     open(): Promise<WorkspaceInfo | null>;

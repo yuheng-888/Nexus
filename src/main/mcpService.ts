@@ -51,6 +51,10 @@ export class McpService {
     return this.readServers();
   }
 
+  async listEnabledServers(): Promise<readonly McpServer[]> {
+    return (await this.readServers()).filter((server) => server.enabled);
+  }
+
   async addServer(request: McpServerAddRequest): Promise<InstallResult> {
     const server = normalizeManualServer({ ...request, enabled: true, source: "manual" });
     await this.saveServers(upsertByName(await this.readServers(), server));

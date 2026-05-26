@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -29,5 +29,35 @@ describe("SearchService", () => {
         preview: "const product = 'Nexus';"
       }
     ]);
+  });
+
+  it("previews and applies literal replacements across matched files", async () => {
+    const service = new SearchService({ workspaceRoot });
+    await writeFile(join(workspaceRoot, "src/app.ts"), "const name = 'Nexus';\nconsole.log('Nexus');\n");
+
+    const preview = await service.previewReplace({ query: "Nexus", replacement: "Nexus IDE" });
+
+    expect(preview).toEqual({
+      files: [{
+        matches: 2,
+        path: "src/app.ts",
+        previews: [
+          { after: "const name = 'Nexus IDE';", before: "const name = 'Nexus';", line: 1 },
+          { after: "console.log('Nexus IDE');", before: "console.log('Nexus');", line: 2 }
+        ]
+      }],
+      totalMatches: 2
+    });
+
+    const applied = await service.applyReplace({ query: "Nexus", replacement: "Nexus IDE" });
+
+    expect(applied).toEqual({
+      filesChanged: 1,
+      paths: ["src/app.ts"],
+      totalMatches: 2
+    });
+    await expect(readFile(join(workspaceRoot, "src/app.ts"), "utf8")).resolves.toBe(
+      "const name = 'Nexus IDE';\nconsole.log('Nexus IDE');\n"
+    );
   });
 });
