@@ -1,0 +1,44 @@
+{
+  "name": "nexus",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Nexus desktop IDE backend runtime.",
+  "type": "module",
+  "main": "main.cjs",
+  "scripts": {
+    "test": "vitest run --testTimeout=60000",
+    "build": "node scripts/clean-dist.mjs && npm --prefix frontend run build && tsc -p tsconfig.json && node scripts/copy-renderer.mjs",
+    "dev": "npm run build && electron .",
+    "build:mac": "npm run build && node scripts/package-mac-manual.mjs",
+    "icon": "python3 scripts/generate-app-icon.py",
+    "install:mac": "npm run build:mac && node scripts/install-mac.mjs",
+    "package:mac:manual": "npm run build && node scripts/package-mac-manual.mjs"
+  },
+  "dependencies": {
+    "@electron/asar": "^3.4.1",
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "@types/node": "^22.15.29",
+    "electron": "^35.2.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  },
+  "build": {
+    "appId": "dev.nexus.ide",
+    "productName": "Nexus",
+    "asar": false,
+    "files": [
+      "dist/**",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}

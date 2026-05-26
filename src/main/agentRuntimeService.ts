@@ -1,0 +1,270 @@
+import type { AgentMessageAttachment, ApiConfig, SessionKind, SessionSnapshot, SubagentProfile } from "../contracts.js";
+import type { RuntimeSessionController, SessionManager } from "./sessionManager.js";
+import { HttpAgentModelClient, assertRunnableConfig, type AgentModelClient, type AgentModelMessage } from "./agentModelClient.js";
+import { NativeAgentToolRunner, type AgentToolResult, type AgentToolRunner, type RagContextProvider } from "./agentTools.js";
+import type { ApiConfigService } from "./apiConfigService.js";
+import { attachImagesToLastUserMessage } from "./agentAttachmentMessages.js";
+import type { ConversationService } from "./conversationService.js";
+import type { FileService } from "./fileService.js";
+import type { GitService } from "./gitService.js";
+import { resolveWorkspacePath } from "./pathGuards.js";
+import type { ReverseContextProvider } from "./reverseAgentTools.js";
+import type { SearchService } from "./searchService.js";
+
+export interface AgentRuntimeServiceOptions {
+  readonly apiConfig: ApiConfigService;
+  readonly conversations?: ConversationService;
+  readonly contextTokenLimit?: number;
+  readonly files: FileService;
+  readonly git: GitService;
+  readonly modelClient?: AgentModelClient;
+  readonly rag?: RagContextProvider;
+  readonly reverse?: ReverseContextProvider;
+  readonly search: SearchService;
+  readonly sessions: SessionManager;
+  readonly toolRunner?: AgentToolRunner;
+}
+
+export interface AgentRuntimeStartInput {
+  readonly conversationId?: string;
+  readonly conversationPrompt?: string;
+  readonly cwd?: string;
+  readonly kind: Extract<SessionKind, "agent" | "subagent">;
+  readonly model?: string;
+  readonly profile?: SubagentProfile;
+  readonly prompt: string;
+  readonly attachments?: readonly AgentMessageAttachment[];
+  readonly workspaceRoot: string | null;
+}
+
+interface AgentRuntimeRunInput extends AgentRuntimeStartInput {
+  readonly config: ApiConfig;
+  readonly cwdForTools: string;
+}
+
+const RUNTIME_COMMAND = "nexus-agent-runtime";
+const ABORT_EXIT_CODE = 130;
+const DEFAULT_CONTEXT_WINDOW_TOKENS = 32000;
+const ERROR_EXIT_CODE = 1;
+const MIN_USABLE_CONTEXT_TOKENS = 4096;
+const SUCCESS_EXIT_CODE = 0;
+
+export class AgentRuntimeService {
+  private readonly apiConfig: ApiConfigService;
+  private readonly conversations: ConversationService | undefined;
+  private readonly contextTokenLimit: number | undefined;
+  private readonly files: FileService;
+  private readonly git: GitService;
+  private readonly modelClient: AgentModelClient;
+  private readonly search: SearchService;
+  private readonly sessions: SessionManager;
+  private readonly toolRunner: AgentToolRunner;
+
+  constructor(options: AgentRuntimeServiceOptions) {
+    this.apiConfig = options.apiConfig;
+    this.conversations = options.conversations;
+    this.contextTokenLimit = options.contextTokenLimit;
+    this.files = options.files;
+    this.git = options.git;
+    this.modelClient = options.modelClient ?? new HttpAgentModelClient();
+    this.search = options.search;
+    this.sessions = options.sessions;
+    this.toolRunner = options.toolRunner ?? new NativeAgentToolRunner({
+      rag: options.rag,
+      reverse: options.reverse
+    });
+  }
+
+  start(input: AgentRuntimeStartInput): SessionSnapshot {
+    const prepared = this.prepareStartInput(input);
+    const sessionOptions = {
+      args: buildRuntimeArgs(prepared),
+      command: RUNTIME_COMMAND,
+      cwd: resolveRuntimeCwd(prepared.workspaceRoot, prepared.cwdForTools),
+      kind: prepared.kind
+    };
+
+    return this.sessions.createRuntime(sessionOptions, (controller) => this.run(prepared, controller));
+  }
+
+  private prepareStartInput(input: AgentRuntimeStartInput): AgentRuntimeRunInput {
+    const prompt = requirePrompt(input.prompt);
+    const model = input.model?.trim();
+
+    return {
+      ...input,
+      config: getRunnableConfig(this.apiConfig.getActive(), model),
+      cwdForTools: input.cwd ?? ".",
+      prompt,
+      workspaceRoot: input.workspaceRoot
+    };
+  }
+
+  private async run(input: AgentRuntimeRunInput, controller: RuntimeSessionController): Promise<void> {
+    try {
+      emit(controller, "agent.started", toStartedEvent(input));
+      const tools = await this.runStartupTools(input, controller);
+      const messages = await this.buildModelMessages(input, tools);
+      const response = await this.modelClient.complete({
+        config: input.config,
+        messages: attachImagesToLastUserMessage(messages, input.attachments)
+      });
+      await this.persistAssistantMessage(input, response.text);
+      emit(controller, "agent.message", { message: response.text });
+      emit(controller, "agent.completed", { usage: response.usage ?? null });
+      controller.exit(SUCCESS_EXIT_CODE);
+    } catch (error) {
+      emit(controller, "agent.error", { message: toErrorMessage(error) });
+      controller.exit(controller.signal.aborted ? ABORT_EXIT_CODE : ERROR_EXIT_CODE);
+    }
+  }
+
+  private async runStartupTools(
+    input: AgentRuntimeRunInput,
+    controller: RuntimeSessionController
+  ): Promise<readonly AgentToolResult[]> {
+    emit(controller, "agent.tools.started", {});
+    if (input.workspaceRoot === null) {
+      emit(controller, "agent.tools.skipped", { reason: "No workspace is open" });
+      return [];
+    }
+
+    const results = await this.toolRunner.runStartupTools({
+      cwd: input.cwdForTools,
+      files: this.files,
+      git: this.git,
+      prompt: input.prompt,
+      search: this.search,
+      workspaceRoot: input.workspaceRoot
+    });
+
+    for (const result of results) {
+      emit(controller, "agent.tool.completed", result);
+    }
+
+    return results;
+  }
+
+  private async buildModelMessages(
+    input: AgentRuntimeRunInput,
+    tools: readonly AgentToolResult[]
+  ): Promise<readonly AgentModelMessage[]> {
+    const systemPrompt = buildSystemPrompt(input, tools);
+    if (this.conversations === undefined || input.conversationId === undefined) {
+      return buildStatelessMessages(input, systemPrompt);
+    }
+
+    const prepared = await this.conversations.prepareModelMessages({
+      contextTokenLimit: getContextTokenLimit(input.config, this.contextTokenLimit),
+      conversationId: input.conversationId,
+      prompt: input.prompt,
+      storedPrompt: input.conversationPrompt,
+      systemPrompt
+    });
+    return prepared.messages;
+  }
+
+  private async persistAssistantMessage(input: AgentRuntimeRunInput, text: string): Promise<void> {
+    if (this.conversations === undefined || input.conversationId === undefined) return;
+
+    await this.conversations.appendAssistantMessage(
+      input.conversationId,
+      text,
+      getContextTokenLimit(input.config, this.contextTokenLimit)
+    );
+  }
+}
+
+function buildRuntimeArgs(input: AgentRuntimeRunInput): readonly string[] {
+  return [input.kind, input.profile?.id ?? "main"];
+}
+
+function requirePrompt(prompt: string | undefined): string {
+  const trimmed = prompt?.trim() ?? "";
+
+  if (trimmed === "") {
+    throw new Error("Agent prompt is required");
+  }
+
+  return trimmed;
+}
+
+function getRunnableConfig(config: ApiConfig | null, model: string | undefined): ApiConfig {
+  if (config === null) {
+    throw new Error("No active API model is configured");
+  }
+
+  const runnable = { ...config, model: model === undefined || model === "" ? config.model : model };
+  assertRunnableConfig(runnable);
+
+  return runnable;
+}
+
+function buildStatelessMessages(
+  input: AgentRuntimeRunInput,
+  systemPrompt: string
+): readonly AgentModelMessage[] {
+  return [
+    { content: systemPrompt, role: "system" },
+    { content: input.prompt, role: "user" }
+  ];
+}
+
+function getContextTokenLimit(config: ApiConfig, override: number | undefined): number {
+  if (override !== undefined) return override;
+  return Math.max(MIN_USABLE_CONTEXT_TOKENS, DEFAULT_CONTEXT_WINDOW_TOKENS - config.maxTokens);
+}
+
+function buildSystemPrompt(input: AgentRuntimeRunInput, tools: readonly AgentToolResult[]): string {
+  return [
+    "You are Nexus, the native coding agent inside the Nexus IDE.",
+    "Use the workspace context provided by Nexus backend tools. Surface blockers explicitly.",
+    input.profile === undefined ? "" : `Active subagent profile: ${input.profile.name}.`,
+    `Workspace: ${formatWorkspace(input.workspaceRoot)}`,
+    `Working directory: ${formatWorkingDirectory(input)}`,
+    "",
+    "Native tool results:",
+    formatToolResults(tools)
+  ].filter(Boolean).join("\n");
+}
+
+function resolveRuntimeCwd(workspaceRoot: string | null, cwd: string): string {
+  if (workspaceRoot === null) return process.cwd();
+  return resolveWorkspacePath(workspaceRoot, cwd);
+}
+
+function formatWorkspace(workspaceRoot: string | null): string {
+  if (workspaceRoot !== null) return workspaceRoot;
+  return "No workspace is open. Project context tools are unavailable until a workspace is opened.";
+}
+
+function formatWorkingDirectory(input: AgentRuntimeRunInput): string {
+  if (input.workspaceRoot === null) return "No workspace working directory";
+  return input.cwdForTools;
+}
+
+function formatToolResults(results: readonly AgentToolResult[]): string {
+  if (results.length === 0) {
+    return "No startup tools were executed.";
+  }
+
+  return results.map((result) => {
+    return `[${result.ok ? "ok" : "failed"}] ${result.name}\n${result.output}`;
+  }).join("\n\n");
+}
+
+function toStartedEvent(input: AgentRuntimeRunInput): object {
+  return {
+    kind: input.kind,
+    model: input.config.model,
+    profile: input.profile?.id ?? null
+  };
+}
+
+function emit(controller: RuntimeSessionController, type: string, payload: object): void {
+  controller.emitData(`${JSON.stringify({ ...payload, type })}\n`);
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

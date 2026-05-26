@@ -1,0 +1,260 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* ── Nexus Cyberpunk Color System ── */
+  --bg-void: #03050a;
+  --bg-base: #060914;
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0d1224;
+  --bg-tertiary: #101630;
+  --bg-card: rgba(13, 18, 36, 0.85);
+  --bg-panel: #080c18;
+  --bg-sidebar: #070b16;
+  --bg-input: rgba(16, 22, 48, 0.9);
+  --bg-hover: rgba(139, 92, 246, 0.06);
+  --bg-active: rgba(139, 92, 246, 0.1);
+  --bg-badge: rgba(139, 92, 246, 0.12);
+  --bg-overlay: rgba(3, 5, 10, 0.92);
+
+  /* ── Neon Accents ── */
+  --accent: #7c3aed;
+  --accent-bright: #a78bfa;
+  --accent-glow: rgba(139, 92, 246, 0.4);
+  --accent-subtle: rgba(139, 92, 246, 0.08);
+  --accent-cyan: #06b6d4;
+  --accent-cyan-glow: rgba(6, 182, 212, 0.4);
+  --accent-pink: #ec4899;
+  --accent-pink-glow: rgba(236, 72, 153, 0.3);
+
+  /* ── Text ── */
+  --text-primary: #d4d8f0;
+  --text-secondary: #a0a6c8;
+  --text-muted: #5c6284;
+  --text-accent: #a78bfa;
+  --text-active: #f0f2ff;
+  --text-dim: #3a3f5c;
+
+  /* ── Status ── */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --error-bg: rgba(239, 68, 68, 0.1);
+  --info: #3b82f6;
+
+  /* ── Borders ── */
+  --border: rgba(139, 92, 246, 0.15);
+  --border-subtle: rgba(139, 92, 246, 0.08);
+  --border-accent: rgba(139, 92, 246, 0.3);
+  --border-glow: rgba(139, 92, 246, 0.5);
+  --focus-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15);
+  --resize-shadow: 0 0 8px var(--accent-glow);
+  --scrollbar-thumb: rgba(139, 92, 246, 0.2);
+  --scrollbar-thumb-hover: rgba(139, 92, 246, 0.35);
+  --selection-bg: rgba(139, 92, 246, 0.3);
+  --selection-text: #fff;
+  --ambient-glow:
+    radial-gradient(ellipse 800px 400px at 20% 10%, rgba(139, 92, 246, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 300px at 80% 85%, rgba(6, 182, 212, 0.03) 0%, transparent 60%);
+
+  /* ── Gradients ── */
+  --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  --gradient-cyber: linear-gradient(135deg, #06b6d4 0%, #7c3aed 50%, #ec4899 100%);
+  --gradient-surface: linear-gradient(180deg, rgba(139, 92, 246, 0.03) 0%, transparent 100%);
+  --gradient-glow: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 20px var(--accent-glow), 0 0 40px rgba(139, 92, 246, 0.15);
+  --shadow-glow-cyan: 0 0 15px var(--accent-cyan-glow), 0 0 30px rgba(6, 182, 212, 0.1);
+  --shadow-neon: 0 0 5px var(--accent-glow), 0 0 10px rgba(139, 92, 246, 0.1), inset 0 0 5px rgba(139, 92, 246, 0.05);
+
+  /* ── Layout ── */
+  --titlebar-height: 38px;
+  --statusbar-height: 26px;
+  --sidebar-width: 48px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* ── Typography ── */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+
+  /* ── Timing ── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg-void);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Scrollbars - Cyberpunk Style ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ── Selection ── */
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-text);
+}
+
+/* ── Focus ── */
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+  50% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(139, 92, 246, 0.1); }
+}
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.8; }
+  94% { opacity: 1; }
+  96% { opacity: 0.9; }
+  97% { opacity: 1; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ── Resizable Panels ── */
+[data-panel-group-direction="horizontal"] > [data-resize-handle] {
+  width: 1px !important;
+  background: var(--border-subtle) !important;
+  transition: background 0.2s, width 0.2s !important;
+  position: relative;
+  flex-shrink: 0;
+}
+
+[data-panel-group-direction="horizontal"] > [data-resize-handle]:hover,
+[data-panel-group-direction="horizontal"] > [data-resize-handle][data-resize-handle-active] {
+  width: 2px !important;
+  background: var(--accent) !important;
+  box-shadow: var(--resize-shadow);
+}
+
+[data-panel-group-direction="vertical"] > [data-resize-handle] {
+  height: 1px !important;
+  background: var(--border-subtle) !important;
+  transition: background 0.2s, height 0.2s !important;
+  position: relative;
+  flex-shrink: 0;
+}
+
+[data-panel-group-direction="vertical"] > [data-resize-handle]:hover,
+[data-panel-group-direction="vertical"] > [data-resize-handle][data-resize-handle-active] {
+  height: 2px !important;
+  background: var(--accent) !important;
+  box-shadow: var(--resize-shadow);
+}
+
+/* ── Global ambient glow ── */
+#root::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--ambient-glow);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Input styling ── */
+input, textarea, select {
+  font-family: var(--font-sans);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent) !important;
+  box-shadow: var(--focus-shadow);
+}
+
+/* ── Button reset ── */
+button {
+  font-family: var(--font-sans);
+}

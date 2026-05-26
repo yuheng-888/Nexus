@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+dist-packaged/
+frontend/dist/
+out/
+coverage/
+
+# Local and generated Nexus state
+.nexus/
+*.log
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.key
+*.mobileprovision
+.npmrc
+
+# Local reference material that is not Nexus source
+vendor/
+
+# Internal implementation notes
+docs/plans/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,122 @@
+.command-palette-backdrop {
+  align-items: flex-start;
+  background: rgba(0, 0, 0, 0.36);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 72px 16px 16px;
+  position: fixed;
+  z-index: 90;
+}
+
+.command-palette-panel {
+  animation: fadeIn 120ms var(--ease-out);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: min(70vh, 560px);
+  overflow: hidden;
+  width: min(760px, calc(100vw - 32px));
+}
+
+.command-palette-input-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.command-palette-icon {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.command-palette-input {
+  background: transparent;
+  border: 0;
+  color: var(--text-active);
+  flex: 1;
+  font-size: 14px;
+  height: 28px;
+  min-width: 0;
+  outline: none;
+}
+
+.command-palette-hint {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.command-palette-body {
+  max-height: calc(min(70vh, 560px) - 53px);
+  overflow: auto;
+  padding: 6px;
+}
+
+.command-palette-empty,
+.command-palette-error,
+.command-palette-running {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 20px 14px;
+}
+
+.command-palette-error {
+  color: var(--error);
+}
+
+.command-palette-row {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  min-height: 42px;
+  padding: 7px 9px;
+  text-align: left;
+  width: 100%;
+}
+
+.command-palette-row[data-selected="true"] {
+  background: var(--bg-active);
+  border-color: var(--border-accent);
+  color: var(--text-active);
+}
+
+.command-palette-row-main {
+  min-width: 0;
+}
+
+.command-palette-row-title {
+  color: var(--text-active);
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-row-category {
+  color: var(--text-muted);
+  display: block;
+  font-size: 11px;
+  line-height: 1.25;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette-shortcut {
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  font-size: 11px;
+}
