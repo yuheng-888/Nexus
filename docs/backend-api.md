@@ -307,6 +307,16 @@ Available interactive tools are:
 - `rag.clear_index` (approval required)
 - `reverse.detect_target`
 - `reverse.scan_javascript`
+- `reverse.asar.inspect`
+- `reverse.asar.diff`
+- `reverse.asar.extract` (approval required)
+- `reverse.asar.pack` (approval required)
+- `reverse.jshook.generate` (approval required)
+- `reverse.jshook.inject` (approval required)
+- `reverse.jshook.restore` (approval required)
+- `reverse.projects.list`
+- `reverse.projects.add` (approval required)
+- `reverse.projects.remove` (approval required)
 - `scripts.discover`
 - `scripts.run` (approval required)
 - `tests.discover`

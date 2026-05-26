@@ -6,6 +6,7 @@ import { createLanguageToolSpecs, type AgentLanguageToolProvider } from "./agent
 import { createMarketplaceToolSpecs, type AgentMarketplaceToolProvider } from "./agentMarketplaceTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
 import { createRagToolSpecs, type AgentRagToolProvider } from "./agentRagTools.js";
+import { createReverseToolSpecs } from "./agentReverseWorkbenchTools.js";
 import { createScriptToolSpecs, type AgentScriptToolProvider } from "./agentScriptTools.js";
 import { createSearchReplaceToolSpecs } from "./agentSearchReplaceTools.js";
 import { createTestToolSpecs, type AgentTestToolProvider } from "./agentTestTools.js";
@@ -16,12 +17,7 @@ import { createWorkflowToolSpecs, type AgentWorkflowToolProvider } from "./agent
 import { createWritableToolSpecs } from "./agentWritableTools.js";
 import type { FileService } from "./fileService.js";
 import type { GitService } from "./gitService.js";
-import { resolveWorkspacePath } from "./pathGuards.js";
-import {
-  formatReverseAnalysis,
-  formatReverseTargetDetection,
-  type ReverseContextProvider
-} from "./reverseAgentTools.js";
+import type { ReverseContextProvider } from "./reverseAgentTools.js";
 import type { SearchService } from "./searchService.js";
 
 export interface AgentInteractiveToolContext {
@@ -130,8 +126,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     ...createSearchReplaceToolSpecs(),
     ...createGitToolSpecs(),
     ...createRagToolSpecs(options.rag),
-    readTool("reverse.detect_target", "Detect reverse-engineering target metadata.", "path?: string", detectReverseTarget(options.reverse)),
-    readTool("reverse.scan_javascript", "Scan JS/TS files with reverse-engineering checks.", "path?: string", scanReverseJavaScript(options.reverse)),
+    ...createReverseToolSpecs(options.reverse),
     ...createLanguageToolSpecs(options.languages),
     ...createScriptToolSpecs(options.scripts),
     ...createTestToolSpecs(options.tests),
@@ -171,24 +166,6 @@ async function searchWorkspace(args: Record<string, unknown>, context: AgentInte
   return formatSearchMatches(matches, readLimit(args, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT));
 }
 
-function detectReverseTarget(provider: ReverseContextProvider | undefined): AgentInteractiveToolSpec["run"] {
-  return async (args, context) => {
-    if (provider === undefined) throw new Error("Reverse tools are not configured.");
-    return formatReverseTargetDetection(await provider.detectTarget(resolveToolPath(args, context)));
-  };
-}
-
-function scanReverseJavaScript(provider: ReverseContextProvider | undefined): AgentInteractiveToolSpec["run"] {
-  return async (args, context) => {
-    if (provider === undefined) throw new Error("Reverse tools are not configured.");
-    return formatReverseAnalysis(await provider.scanJavaScript({ path: resolveToolPath(args, context) }));
-  };
-}
-
-function resolveToolPath(args: Record<string, unknown>, context: AgentInteractiveToolContext): string {
-  return resolveWorkspacePath(requireWorkspaceRoot(context), readOptionalString(args, "path") ?? context.cwd);
-}
-
 function formatDirectoryEntry(entry: DirectoryEntry): string {
   return `${entry.isDirectory ? "dir " : "file"} ${entry.path}`;
 }
@@ -198,11 +175,6 @@ function formatSearchMatches(matches: readonly SearchMatch[], limit: number): st
   const shown = matches.slice(0, limit).map((match) => `${match.path}:${match.line}: ${match.preview}`);
   const omitted = matches.length > limit ? [`... ${matches.length - limit} more matches omitted by limit ${limit}.`] : [];
   return [...shown, ...omitted].join("\n");
-}
-
-function requireWorkspaceRoot(context: AgentInteractiveToolContext): string {
-  if (context.workspaceRoot === null) throw new Error("No workspace is open");
-  return context.workspaceRoot;
 }
 
 function failed(name: string, output: string): AgentToolResult {
