@@ -2,6 +2,7 @@ import type { DirectoryEntry, SearchMatch } from "../contracts.js";
 import type { GitCommandResult, GitDiffResult } from "../gitContracts.js";
 import { createGitHubPullRequestToolSpecs, type AgentGitHubPullRequestToolProvider } from "./agentGitHubPullRequestTools.js";
 import { createMcpToolSpecs, type AgentMcpToolProvider } from "./agentMcpTools.js";
+import { createSearchReplaceToolSpecs } from "./agentSearchReplaceTools.js";
 import type { AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
 import { readLimit, readOptionalBoolean, readOptionalString, readRequiredString } from "./agentToolArgs.js";
@@ -115,6 +116,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     readTool("workspace.list_directory", "List files in a workspace directory.", "path?: string", listDirectory),
     readTool("workspace.read_file", "Read a UTF-8 text file from the workspace.", "path: string", readFile),
     readTool("workspace.search", "Search workspace text with ripgrep.", "query: string, cwd?: string, limit?: number", searchWorkspace),
+    ...createSearchReplaceToolSpecs(),
     readTool("git.status", "Read git status for the workspace.", "cwd?: string", readGitStatus),
     readTool("git.diff", "Read git diff without modifying files.", "cwd?: string, path?: string, staged?: boolean", readGitDiff),
     readTool("rag.retrieve_context", "Retrieve local RAG snippets for a query.", "query?: string, limit?: number", retrieveRagContext(options.rag)),
