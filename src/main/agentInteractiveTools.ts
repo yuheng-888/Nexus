@@ -9,6 +9,7 @@ import { createTestToolSpecs, type AgentTestToolProvider } from "./agentTestTool
 import type { AgentToolCall } from "./agentToolProtocol.js";
 import type { AgentToolResult, RagContextProvider } from "./agentTools.js";
 import { readLimit, readOptionalBoolean, readOptionalString, readRequiredString } from "./agentToolArgs.js";
+import { createWorkflowToolSpecs, type AgentWorkflowToolProvider } from "./agentWorkflowTools.js";
 import { createWritableToolSpecs } from "./agentWritableTools.js";
 import type { FileService } from "./fileService.js";
 import type { GitService } from "./gitService.js";
@@ -51,6 +52,7 @@ export interface NativeAgentInteractiveToolRunnerOptions {
   readonly reverse?: ReverseContextProvider;
   readonly scripts?: AgentScriptToolProvider;
   readonly tests?: AgentTestToolProvider;
+  readonly workflows?: AgentWorkflowToolProvider;
 }
 
 export type AgentInteractiveToolPermission = "read" | "write";
@@ -131,6 +133,7 @@ function buildTools(options: NativeAgentInteractiveToolRunnerOptions): readonly 
     ...createLanguageToolSpecs(options.languages),
     ...createScriptToolSpecs(options.scripts),
     ...createTestToolSpecs(options.tests),
+    ...createWorkflowToolSpecs(options.workflows),
     ...createGitHubPullRequestToolSpecs(options.gitHubPullRequests),
     ...createMcpToolSpecs(options.mcp),
     ...createWritableToolSpecs()

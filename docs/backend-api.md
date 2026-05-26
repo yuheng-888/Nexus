@@ -262,6 +262,8 @@ Available interactive tools are:
 - `scripts.run` (approval required)
 - `tests.discover`
 - `tests.run` (approval required)
+- `workflows.list`
+- `workflows.run` (approval required)
 
 Start the main assistant:
 

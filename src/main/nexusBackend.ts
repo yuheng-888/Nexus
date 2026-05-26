@@ -15,6 +15,7 @@ import { NativeAgentLanguageToolProvider } from "./agentLanguageTools.js";
 import { NativeAgentMcpToolProvider } from "./agentMcpTools.js";
 import { NativeAgentScriptToolProvider } from "./agentScriptTools.js";
 import { NativeAgentTestToolProvider } from "./agentTestTools.js";
+import { NativeAgentWorkflowToolProvider } from "./agentWorkflowTools.js";
 import { McpService } from "./mcpService.js";
 import { resolveWorkspacePath } from "./pathGuards.js";
 import { RagService } from "./ragService.js";
@@ -67,6 +68,7 @@ export class NexusBackend {
   private readonly workspaceState: WorkspaceStateRecorder;
 
   constructor(config: WorkspaceInfo, sessions: SessionManager, options: NexusBackendOptions = {}) {
+    let workflowService: WorkflowService | undefined;
     this.config = config;
     this.sessions = sessions;
     this.workspaceState = options.workspaceState ?? new WorkspaceStateStore();
@@ -99,15 +101,17 @@ export class NexusBackend {
       search: this.search,
       sessions,
       tests: new NativeAgentTestToolProvider({ service: this.tests }),
-      toolRunner: options.toolRunner
+      toolRunner: options.toolRunner,
+      workflows: new NativeAgentWorkflowToolProvider({ service: () => requireWorkflowService(workflowService) })
     });
     this.subagents = new SubagentService(this.agentRuntime);
-    this.workflows = new WorkflowService({
+    workflowService = new WorkflowService({
       git: this.git,
       rag: this.rag,
       subagents: this.subagents,
       workspaceRoot: config.root
     });
+    this.workflows = workflowService;
   }
 
   getWorkspace(): WorkspaceInfo {
@@ -208,4 +212,9 @@ export class NexusBackend {
 
     return this.config.root;
   }
+}
+
+function requireWorkflowService(service: WorkflowService | undefined): WorkflowService {
+  if (service === undefined) throw new Error("Workflow service is not configured.");
+  return service;
 }

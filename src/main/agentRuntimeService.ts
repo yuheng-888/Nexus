@@ -17,6 +17,7 @@ import type { AgentLanguageToolProvider } from "./agentLanguageTools.js";
 import type { AgentMcpToolProvider } from "./agentMcpTools.js";
 import type { AgentScriptToolProvider } from "./agentScriptTools.js";
 import type { AgentTestToolProvider } from "./agentTestTools.js";
+import type { AgentWorkflowToolProvider } from "./agentWorkflowTools.js";
 import type { ConversationService } from "./conversationService.js";
 import type { FileService } from "./fileService.js";
 import type { GitService } from "./gitService.js";
@@ -42,6 +43,7 @@ export interface AgentRuntimeServiceOptions {
   readonly sessions: SessionManager;
   readonly tests?: AgentTestToolProvider;
   readonly toolRunner?: AgentToolRunner;
+  readonly workflows?: AgentWorkflowToolProvider;
 }
 
 export interface AgentRuntimeStartInput {
@@ -93,7 +95,8 @@ export class AgentRuntimeService {
       rag: options.rag,
       reverse: options.reverse,
       scripts: options.scripts,
-      tests: options.tests
+      tests: options.tests,
+      workflows: options.workflows
     });
     this.modelClient = options.modelClient ?? new HttpAgentModelClient();
     this.search = options.search;
